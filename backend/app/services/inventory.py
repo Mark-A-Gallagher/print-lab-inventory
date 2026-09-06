@@ -223,7 +223,7 @@ def assign_to_machine(
         user_id (str): The identifier of the person who performed the action.
 
     Raises:
-        ValueError: If the spool is already assigned to a different machine.
+        ValueError: If the spool is already assigned to any machine.
     """
     current_machine = get_current_machine(db, spool_id)
 
