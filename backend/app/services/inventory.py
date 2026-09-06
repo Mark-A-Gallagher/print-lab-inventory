@@ -109,6 +109,7 @@ def record_filament_used(
     )
     db.add(new_event)
     db.commit()
+    return new_event
 
 
 def record_weight_adjustment(
