@@ -6,7 +6,8 @@
 from datetime import datetime
 from enum import Enum
 
-from sqlalchemy import DateTime, Enum as SQLEnum, ForeignKey, Integer, String
+from sqlalchemy import DateTime, ForeignKey, Integer, String
+from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
@@ -125,4 +126,14 @@ class InventoryEvent(Base):
     note: Mapped[str | None] = mapped_column(
         String(500),
         nullable=True,
+    )
+
+    # Time at which the event was created.
+    #
+    # The timestamp is assigned by the server when the event is inserted and should
+    # never be modified afterward.
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        nullable=False,
+        default=datetime.utcnow,
     )
