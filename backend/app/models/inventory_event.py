@@ -6,7 +6,7 @@
 from datetime import datetime
 from enum import Enum
 
-from sqlalchemy import DateTime, ForeignKey, Integer, String
+from sqlalchemy import DateTime, Float, ForeignKey, Integer, String
 from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -79,8 +79,8 @@ class InventoryEvent(Base):
     #
     # A nullable field allows machine assignment events to exist without
     # pretending that they changed the amount of filament.
-    quantity_change: Mapped[int | None] = mapped_column(
-        Integer,
+    quantity_change: Mapped[float | None] = mapped_column(
+        Float,
         nullable=True,
     )
 

@@ -6,7 +6,7 @@
 from datetime import datetime
 from enum import Enum
 
-from sqlalchemy import DateTime, ForeignKey, Integer, String
+from sqlalchemy import DateTime, Float, ForeignKey, Integer, String
 from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -79,8 +79,8 @@ class ReservationEvent(Base):
     #
     # For FULFILLED:
     #   amount = amount being fulfilled
-    amount: Mapped[int] = mapped_column(
-        Integer,
+    amount: Mapped[float] = mapped_column(
+        Float,
         nullable=False,
     )
 
