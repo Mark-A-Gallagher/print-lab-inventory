@@ -3,7 +3,7 @@
 # DESIGN.md ref: Section 4.2 (Reservation Events)
 #
 
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 
 from sqlalchemy import DateTime, Float, ForeignKey, Integer, String
@@ -114,5 +114,5 @@ class ReservationEvent(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime,
         nullable=False,
-        default=datetime.utcnow,
+        default=lambda: datetime.now(timezone.utc),
     )
