@@ -21,7 +21,7 @@ class Machine(Base):
     __tablename__ = "machines"
 
     # Unique identifier for the machine.
-    id: Mapped[str] = mapped_column(primary_key=True)
+    id: Mapped[int] = mapped_column(primary_key=True)
 
     # Human-readable machine name.
     #
