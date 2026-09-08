@@ -2,7 +2,7 @@
 #
 # DESIGN.md ref: Section 10
 #
-# TODO: test an already-released reservation cannot be released again
+
 
 import pytest
 from app.models import (
