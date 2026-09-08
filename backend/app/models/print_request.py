@@ -43,7 +43,7 @@ class PrintRequest(Base):
     # Identifier of the person who submitted the request.
     #
     # V1 intentionally does not use a User/authentication system.
-    requester_by: Mapped[str] = mapped_column(String(100), nullable=False)
+    requested_by: Mapped[str] = mapped_column(String(100), nullable=False)
 
     # Name of the project being requested.
     project_name: Mapped[str] = mapped_column(String(200), nullable=False)
