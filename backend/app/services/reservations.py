@@ -109,24 +109,10 @@ def create_reservation(
 ) -> ReservationEvent:
     """
     Create a new reservation against a spool's available filament.
-
-    DESIGN.md Section 6.3: reject if amount exceeds what's currently
-    available (current filament minus existing active reservations).
-
-    Args:
-        db (Session): The SQLAlchemy database session.
-        spool_id (int): The spool being reserved against.
-        print_request_id (int): The print request this reservation is for.
-        amount (float): The amount of filament to reserve, in grams.
-        user_id (str): The identifier of the person making the reservation.
-
-    Returns:
-        ReservationEvent: The newly created RESERVATION_CREATED event.
-
-    Raises:
-        ValueError: If the requested amount exceeds what's available.
     """
+
     available = get_available(db, spool_id)
+
     if amount > available:
         raise ValueError(f"Cannot reserve {amount}g - only {available}g available.")
 
@@ -137,8 +123,10 @@ def create_reservation(
         amount=amount,
         user_id=user_id,
     )
+
     db.add(new_reservation)
     db.commit()
+
     return new_reservation
 
 
