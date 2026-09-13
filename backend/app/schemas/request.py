@@ -1,13 +1,29 @@
 # request.py (Pydantic schemas)
 #
-# DESIGN.md ref: Section 3, Section 6.3/6.4, Section 9
-#
-# TODO: PrintRequestCreate - what does creating a print request need?
-#   (requested_by, project_name, material_id, amount_required)
-#
-# TODO: PrintRequestOut - what does the API return?
-#
-# TODO: think about a schema for the /reserve endpoint - does the client
-#   choose the spool, or does the server pick "the fullest compatible
-#   spool" per DESIGN.md's v1 decision (Section 6.3)? That decision
-#   affects what this schema needs to contain.
+from pydantic import BaseModel, Field
+
+from app.models.print_request import PrintRequestStatus
+
+
+class PrintRequestCreate(BaseModel):
+    requested_by: str = Field(min_length=1, max_length=100)
+    project_name: str = Field(min_length=1, max_length=200)
+    material_id: int
+    amount_grams: float = Field(gt=0)
+
+
+class PrintRequestOut(BaseModel):
+    id: int
+    requested_by: str
+    project_name: str
+    material_id: int
+    amount_grams: float
+    status: PrintRequestStatus
+
+    model_config = {"from_attributes": True}
+
+
+class ReservationCreate(BaseModel):
+    print_request_id: int
+    amount: float = Field(gt=0)
+    user_id: str = Field(min_length=1, max_length=100)
