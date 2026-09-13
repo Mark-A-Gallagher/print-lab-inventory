@@ -12,7 +12,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models import InventoryEvent, InventoryEventType, Material, Spool
+from app.models import InventoryEventType, Material, Spool
 from app.schemas.spool import (
     SpoolAssignment,
     SpoolCorrection,
@@ -25,7 +25,6 @@ from app.services.inventory import (
     get_current_machine,
     get_current_weight,
     record_correction,
-    record_filament_used,
     record_weight_adjustment,
     remove_from_machine,
 )
@@ -59,6 +58,8 @@ def create_spool(
         HTTPException 404: If the material_id does not exist
         HTTPException 422: If validation fails
     """
+    from app.models import InventoryEvent
+
     # Validate that the material exists
     material = db.query(Material).filter(Material.id == spool_data.material_id).first()
     if not material:
@@ -284,6 +285,8 @@ def assign_to_machine_endpoint(
         HTTPException 404: If the spool or machine does not exist
         HTTPException 422: If the spool is already assigned to another machine
     """
+    from app.models import Machine
+
     # Validate that the spool exists
     spool = db.query(Spool).filter(Spool.id == spool_id).first()
     if not spool:
@@ -293,8 +296,6 @@ def assign_to_machine_endpoint(
         )
 
     # Validate that the machine exists
-    from app.models import Machine
-
     machine = db.query(Machine).filter(Machine.id == assignment_data.machine_id).first()
     if not machine:
         raise HTTPException(
