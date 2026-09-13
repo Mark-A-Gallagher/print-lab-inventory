@@ -9,17 +9,14 @@
 #
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import desc
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models import InventoryEvent, PrintRequest, Spool
+from app.models import PrintRequest, Spool
 from app.schemas.request import PrintRequestCreate, PrintRequestOut, ReservationCreate
-from app.services.inventory import get_current_weight
 from app.services.reservations import (
     create_reservation,
     fulfill_reservation,
-    get_available,
     release_reservation,
 )
 
