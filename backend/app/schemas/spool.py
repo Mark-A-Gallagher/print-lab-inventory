@@ -2,15 +2,43 @@
 #
 # DESIGN.md ref: Section 3, Section 9 (spool endpoints)
 #
-# TODO: SpoolCreate - what does a client need to send to create a spool?
-#   (material_id, original_filament_weight, empty_spool_weight,
-#   low_stock_threshold)
-#
-# TODO: SpoolOut - what does the API return? This should include the
-#   DERIVED fields (current_weight, current_machine_id, reserved_amount,
-#   available) even though those don't exist as columns on the Spool
-#   model - they get computed in the service layer before this schema is
-#   built. Don't put them on the ORM model; only on this response schema.
-#
-# TODO: think about what other request schemas you'll need for the
-#   weight-update, assign, and correction endpoints.
+from pydantic import BaseModel, Field
+
+
+class SpoolCreate(BaseModel):
+    material_id: int
+    original_weight: int = Field(gt=0)
+    empty_spool_weight: int = Field(ge=0)
+    low_stock_threshold: float = Field(ge=0)
+
+
+class SpoolOut(BaseModel):
+    id: int
+    material_id: int
+    original_weight: float
+    low_stock_threshold: float
+
+    # Derived from inventory and reservation events.
+    current_weight: float
+    current_machine_id: int | None
+    reserved_amount: float
+    available: float
+
+    model_config = {"from_attributes": True}
+
+
+class WeightUpdate(BaseModel):
+    new_total_weight: float = Field(ge=0)
+    user_id: str = Field(min_length=1, max_length=100)
+
+
+class SpoolAssignment(BaseModel):
+    machine_id: int
+    user_id: str = Field(min_length=1, max_length=100)
+
+
+class SpoolCorrection(BaseModel):
+    related_event_id: int
+    user_id: str = Field(min_length=1, max_length=100)
+    reason: str = Field(min_length=1, max_length=500)
+    amount: int
