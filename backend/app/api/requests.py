@@ -26,7 +26,7 @@ router = APIRouter()
 @router.post("/", response_model=PrintRequestOut, status_code=status.HTTP_201_CREATED)
 def create_request(
     request_data: PrintRequestCreate,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db),  # noqa: B008
 ) -> PrintRequestOut:
     """
     Create a new print request.
@@ -50,7 +50,9 @@ def create_request(
     # Validate that the material exists
     from app.models import Material
 
-    material = db.query(Material).filter(Material.id == request_data.material_id).first()
+    material = (
+        db.query(Material).filter(Material.id == request_data.material_id).first()
+    )
     if not material:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -80,7 +82,7 @@ def create_request(
 
 
 @router.get("/", response_model=list[PrintRequestOut])
-def list_requests(db: Session = Depends(get_db)) -> list[PrintRequestOut]:
+def list_requests(db: Session = Depends(get_db)) -> list[PrintRequestOut]:  # noqa: B008
     """
     Retrieve all print requests.
 
@@ -105,7 +107,7 @@ def list_requests(db: Session = Depends(get_db)) -> list[PrintRequestOut]:
 @router.get("/{request_id}", response_model=PrintRequestOut)
 def get_request(
     request_id: int,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db),  # noqa: B008
 ) -> PrintRequestOut:
     """
     Retrieve a single print request by ID.
@@ -145,7 +147,7 @@ def get_request(
 def reserve(
     request_id: int,
     reservation_data: ReservationCreate,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db),  # noqa: B008
 ) -> dict:
     """
     Create a reservation against a spool for a print request.
@@ -178,7 +180,9 @@ def reserve(
         )
 
     # Validate that the spool exists
-    spool = db.query(Spool).filter(Spool.id == reservation_data.print_request_id).first()
+    spool = (
+        db.query(Spool).filter(Spool.id == reservation_data.print_request_id).first()
+    )
     if not spool:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -214,7 +218,7 @@ def release(
     request_id: int,
     reservation_id: int,
     user_id: str,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db),  # noqa: B008
 ) -> None:
     """
     Release an active reservation, freeing its filament back to availability.
@@ -254,7 +258,7 @@ def fulfill(
     request_id: int,
     reservation_id: int,
     user_id: str,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db),  # noqa: B008
 ) -> None:
     """
     Fulfill a reservation: convert a planned allocation into an actual physical

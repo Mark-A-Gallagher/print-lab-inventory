@@ -36,7 +36,7 @@ router = APIRouter()
 @router.post("/", response_model=SpoolOut, status_code=status.HTTP_201_CREATED)
 def create_spool(
     spool_data: SpoolCreate,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db),  # noqa: B008
 ) -> SpoolOut:
     """
     Create a new spool with an initial SPOOL_CREATED inventory event.
@@ -102,7 +102,7 @@ def create_spool(
 
 
 @router.get("/", response_model=list[SpoolOut])
-def list_spools(db: Session = Depends(get_db)) -> list[SpoolOut]:
+def list_spools(db: Session = Depends(get_db)) -> list[SpoolOut]:  # noqa: B008
     """
     Retrieve all spools with their derived fields.
 
@@ -138,7 +138,7 @@ def list_spools(db: Session = Depends(get_db)) -> list[SpoolOut]:
 @router.get("/{spool_id}", response_model=SpoolOut)
 def get_spool(
     spool_id: int,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db),  # noqa: B008
 ) -> SpoolOut:
     """
     Retrieve a single spool by ID with all derived fields.
@@ -178,7 +178,7 @@ def get_spool(
 def update_weight(
     spool_id: int,
     weight_data: WeightUpdate,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db),  # noqa: B008
 ) -> None:
     """
     Update the spool's weight via a WEIGHT_ADJUSTMENT inventory event.
@@ -222,7 +222,7 @@ def update_weight(
 def correct_event(
     spool_id: int,
     correction_data: SpoolCorrection,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db),  # noqa: B008
 ) -> None:
     """
     Correct a previous inventory event via a SPOOL_CORRECTION event.
@@ -267,7 +267,7 @@ def correct_event(
 def assign_to_machine_endpoint(
     spool_id: int,
     assignment_data: SpoolAssignment,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db),  # noqa: B008
 ) -> None:
     """
     Assign a spool to a machine via an ASSIGNED_TO_MACHINE event.
@@ -321,7 +321,7 @@ def assign_to_machine_endpoint(
 def unassign_from_machine_endpoint(
     spool_id: int,
     user_id: str,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db),  # noqa: B008
 ) -> None:
     """
     Remove a spool from its currently assigned machine.

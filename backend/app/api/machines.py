@@ -57,7 +57,7 @@ def get_current_spool_for_machine(db: Session, machine_id: int) -> int | None:
 @router.post("/", response_model=MachineOut, status_code=status.HTTP_201_CREATED)
 def create_machine(
     machine_data: MachineCreate,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db),  # noqa: B008
 ) -> MachineOut:
     """
     Create a new machine (3D printer).
@@ -89,7 +89,7 @@ def create_machine(
 
 
 @router.get("/", response_model=list[MachineOut])
-def list_machines(db: Session = Depends(get_db)) -> list[MachineOut]:
+def list_machines(db: Session = Depends(get_db)) -> list[MachineOut]:  # noqa: B008
     """
     Retrieve all machines with their current spool assignment (if any).
 
@@ -119,7 +119,7 @@ def list_machines(db: Session = Depends(get_db)) -> list[MachineOut]:
 @router.get("/{machine_id}", response_model=MachineOut)
 def get_machine(
     machine_id: int,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db),  # noqa: B008
 ) -> MachineOut:
     """
     Retrieve a single machine by ID.
@@ -153,7 +153,7 @@ def get_machine(
 def update_machine_status(
     machine_id: int,
     status_data: MachineStatusUpdate,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db),  # noqa: B008
 ) -> MachineOut:
     """
     Update a machine's operational status (e.g., online/offline).

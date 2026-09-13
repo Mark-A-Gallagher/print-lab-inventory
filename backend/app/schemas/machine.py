@@ -13,7 +13,6 @@ class MachineOut(BaseModel):
     id: int
     name: str
     status: str
-    current_spool_id: int | None
 
     model_config = {"from_attributes": True}
 
