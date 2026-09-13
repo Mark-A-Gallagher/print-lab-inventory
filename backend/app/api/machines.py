@@ -9,7 +9,6 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import InventoryEvent, InventoryEventType, Machine
 from app.schemas.machine import MachineCreate, MachineOut, MachineStatusUpdate
-from app.services.inventory import get_current_machine
 
 router = APIRouter()
 
