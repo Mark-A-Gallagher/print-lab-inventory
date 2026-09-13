@@ -7,11 +7,18 @@
 # requests via your services layer before touching the database.
 #
 
+import os
+from pathlib import Path
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api import machines, requests, spools
 from app.database import Base, engine
+
+# Ensure the data directory exists for SQLite database
+data_dir = Path("data")
+data_dir.mkdir(exist_ok=True)
 
 # Create all database tables on startup (for local development).
 #
