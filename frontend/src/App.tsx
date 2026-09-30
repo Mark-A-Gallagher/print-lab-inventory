@@ -1,11 +1,25 @@
 // App.tsx
-//
-// TODO: set up react-router-dom routes for:
-//   /              -> Dashboard
-//   /inventory     -> Inventory
-//   /spools/:id    -> SpoolDetail  (this is the QR-code landing page, Release 0.4)
-//   /machines      -> Machines
-//   /requests      -> PrintRequests
-//
-// TODO: think about a shared layout/nav component so every page doesn't
-// reimplement navigation.
+
+import { Navigate, Route, Routes } from "react-router-dom";
+import Layout from "./components/Layout";
+
+import Dashboard from "./pages/Dashboard";
+import Inventory from "./pages/Inventory";
+import Machines from "./pages/Machines";
+import PrintRequests from "./pages/PrintRequests";
+import SpoolDetail from "./pages/SpoolDetail";
+
+export default function App() {
+    return (
+        <Routes>
+            <Route element={<Layout />}>
+                <Route path="/" element={<Dashboard />} />
+                <Route path="/inventory" element={<Inventory />} />
+                <Route path="/machines" element={<Machines />} />
+                <Route path="/requests" element={<PrintRequests />} />
+                <Route path="/spools/:id" element={<SpoolDetail />} />
+            </Route>
+            <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+    );
+}
