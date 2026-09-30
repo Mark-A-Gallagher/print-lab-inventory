@@ -1,0 +1,173 @@
+.print-requests {
+    animation: fadeIn 0.3s ease-in;
+}
+
+.print-requests h1 {
+    color: #2c3e50;
+    margin-bottom: 2rem;
+}
+
+.requests-container {
+    display: grid;
+    grid-template-columns: 1fr 350px;
+    gap: 2rem;
+}
+
+@media (max-width: 1024px) {
+    .requests-container {
+        grid-template-columns: 1fr;
+    }
+
+    .reservation-panel {
+        position: sticky;
+        top: 2rem;
+    }
+}
+
+.requests-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.request-section h2 {
+    color: #2c3e50;
+    margin: 0 0 1rem 0;
+    font-size: 1.1rem;
+}
+
+.request-cards {
+    display: grid;
+    gap: 1rem;
+}
+
+.request-card {
+    background: white;
+    border: 2px solid #bdc3c7;
+    border-radius: 8px;
+    padding: 1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.request-card:hover {
+    border-color: #3498db;
+    box-shadow: 0 2px 8px rgba(52, 152, 219, 0.1);
+}
+
+.request-card.selected {
+    border-color: #3498db;
+    background-color: #ecf8fb;
+}
+
+.request-card.active {
+    border-color: #16a085;
+    background-color: #ecf8f5;
+}
+
+.request-card.completed {
+    border-color: #95a5a6;
+    background-color: #ecf0f1;
+    opacity: 0.7;
+}
+
+.request-card h4 {
+    margin: 0 0 0.5rem 0;
+    color: #2c3e50;
+}
+
+.request-card .by {
+    margin: 0;
+    font-size: 0.85rem;
+    color: #7f8c8d;
+}
+
+.request-card .amount {
+    margin: 0.5rem 0 0 0;
+    font-size: 0.95rem;
+    font-weight: bold;
+    color: #16a085;
+}
+
+.request-card .status {
+    margin: 0.5rem 0 0 0;
+    font-size: 0.85rem;
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+}
+
+.status-printing {
+    background-color: #d5f4e6;
+    color: #16a085;
+}
+
+.status-approved {
+    background-color: #fef5e7;
+    color: #f39c12;
+}
+
+.status-complete {
+    background-color: #d5f4e6;
+    color: #16a085;
+}
+
+.status-rejected {
+    background-color: #fadbd8;
+    color: #e74c3c;
+}
+
+.empty-text {
+    color: #7f8c8d;
+    font-style: italic;
+    margin: 0;
+}
+
+.reservation-panel {
+    background: white;
+    border: 1px solid #bdc3c7;
+    border-radius: 8px;
+    padding: 1.5rem;
+    height: fit-content;
+}
+
+.reservation-panel h3 {
+    margin-top: 0;
+    color: #2c3e50;
+}
+
+.no-spools-message {
+    background: #fadbd8;
+    border: 1px solid #e74c3c;
+    border-radius: 8px;
+    padding: 1.5rem;
+    color: #e74c3c;
+    text-align: center;
+}
+
+.loading,
+.error {
+    padding: 2rem;
+    text-align: center;
+    font-size: 1.1rem;
+}
+
+.loading {
+    color: #3498db;
+}
+
+.error {
+    color: #e74c3c;
+    background-color: #fadbd8;
+    border-radius: 8px;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
