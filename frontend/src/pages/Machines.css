@@ -1,0 +1,121 @@
+.machines {
+    animation: fadeIn 0.3s ease-in;
+}
+
+.machines h1 {
+    color: #2c3e50;
+    margin-bottom: 2rem;
+}
+
+.machines-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.5rem;
+}
+
+.machine-card {
+    background: white;
+    border: 1px solid #bdc3c7;
+    border-radius: 8px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.machine-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #ecf0f1;
+}
+
+.machine-header h3 {
+    margin: 0;
+    color: #2c3e50;
+    font-size: 1.2rem;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: bold;
+}
+
+.status-online {
+    background-color: #d5f4e6;
+    color: #16a085;
+}
+
+.status-offline {
+    background-color: #fadbd8;
+    color: #e74c3c;
+}
+
+.machine-info {
+    color: #2c3e50;
+}
+
+.assigned-label {
+    margin: 0 0 0.5rem 0;
+    font-size: 0.9rem;
+    color: #7f8c8d;
+}
+
+.spool-info {
+    margin: 0.5rem 0;
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: #3498db;
+}
+
+.weight-info {
+    margin: 0;
+    font-size: 0.95rem;
+    color: #7f8c8d;
+}
+
+.no-spool {
+    margin: 0;
+    padding: 1rem;
+    background-color: #ecf0f1;
+    border-radius: 4px;
+    color: #7f8c8d;
+    text-align: center;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 3rem;
+    color: #7f8c8d;
+    font-style: italic;
+}
+
+.loading,
+.error {
+    padding: 2rem;
+    text-align: center;
+    font-size: 1.1rem;
+}
+
+.loading {
+    color: #3498db;
+}
+
+.error {
+    color: #e74c3c;
+    background-color: #fadbd8;
+    border-radius: 8px;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
