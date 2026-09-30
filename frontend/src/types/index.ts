@@ -1,15 +1,84 @@
 // types/index.ts
-//
-// Mirrors backend Pydantic schemas (app/schemas/*.py). Keep these in
-// sync manually - see DESIGN.md Section 9 for the API surface.
-//
-// TODO: define a Spool interface matching SpoolOut - remember it
-//   includes DERIVED fields (current_weight, current_machine_id,
-//   reserved_amount, available), not just stored columns.
-//
-// TODO: define a Machine interface matching MachineOut.
-//
-// TODO: define a PrintRequest interface matching PrintRequestOut.
-//
-// TODO: define request-body types (SpoolCreate, MachineCreate,
-//   PrintRequestCreate) matching your backend schemas.
+
+export type Material = {
+    id: number;
+    name: string;
+    color?: string | null;
+};
+
+export type Machine = {
+    id: number;
+    name: string;
+    status: string;
+};
+
+export type Spool = {
+    id: number;
+    material_id: number;
+    original_filament_weight: number;
+    empty_spool_weight: number;
+    low_stock_threshold: number;
+
+    // Derived values from backend event stream
+    current_weight: number;
+    current_machine_id: number | null;
+    reserved_amount: number;
+    available: number;
+};
+
+export type PrintRequest = {
+    id: number;
+    requested_by: string;
+    project_name: string;
+    material_id: number;
+    amount_required: number;
+    status: "Pending" | "Approved" | "Printing" | "Complete" | "Rejected";
+};
+
+export type SpoolCreate = {
+    material_id: number;
+    original_filament_weight: number;
+    empty_spool_weight: number;
+    low_stock_threshold: number;
+};
+
+export type MachineCreate = {
+    name: string;
+    status?: string;
+};
+
+export type PrintRequestCreate = {
+    requested_by: string;
+    project_name: string;
+    material_id: number;
+    amount_required: number;
+};
+
+export type ReservationCreate = {
+    spool_id: number;
+    amount: number;
+};
+
+export type InventoryEvent = {
+    id: number;
+    spool_id: number;
+    event_type: string;
+    quantity_change?: number | null;
+    machine_id?: number | null;
+    user_id: string;
+    related_event_id?: number | null;
+    related_request_id?: number | null;
+    note?: string;
+    created_at: string;
+};
+
+export type ReservationEvent = {
+    id: number;
+    spool_id: number;
+    print_request_id: number;
+    event_type: string;
+    amount: number;
+    user_id: string;
+    related_event_id?: number | null;
+    created_at: string;
+};
