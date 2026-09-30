@@ -1,5 +1,15 @@
 // main.tsx
-//
-// TODO: standard Vite + React entrypoint - import React, ReactDOM, and
-// your App component, then render App into the #root div (see
-// ../index.html). Wrap it in React.StrictMode.
+
+import React from "react";
+import ReactDOM from "react-dom/client";
+import { BrowserRouter } from "react-router-dom";
+import App from "./App";
+import "./index.css";
+
+ReactDOM.createRoot(document.getElementById("root")!).render(
+    <React.StrictMode>
+        <BrowserRouter>
+            <App />
+        </BrowserRouter>
+    </React.StrictMode>
+);
