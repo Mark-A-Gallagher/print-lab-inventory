@@ -21,6 +21,9 @@ export default function SpoolCard({
         <div className="spool-card" onClick={handleClick}>
             <div className="spool-header">
                 <h3>{material?.name ?? `Spool #${spool.id}`}</h3>
+                {material?.color && (
+                    <span className="material-color">{material.color}</span>
+                )}
                 <LowStockBadge
                     current={spool.current_weight}
                     threshold={spool.low_stock_threshold}

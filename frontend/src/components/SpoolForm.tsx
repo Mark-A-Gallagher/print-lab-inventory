@@ -13,6 +13,8 @@ export default function SpoolForm({ onSuccess, onCancel }: SpoolFormProps) {
     const [error, setError] = useState<string | null>(null);
     const [formData, setFormData] = useState({
         material_id: 1,
+        material_type: "",
+        color: "",
         original_weight: 1000,
         empty_spool_weight: 100,
         low_stock_threshold: 200,
@@ -26,9 +28,12 @@ export default function SpoolForm({ onSuccess, onCancel }: SpoolFormProps) {
         setFormData((prev) => ({
             ...prev,
             [name]:
-                name === "material_id"
+                name === "material_id" ||
+                    name === "original_weight" ||
+                    name === "empty_spool_weight" ||
+                    name === "low_stock_threshold"
                     ? Number(value)
-                    : Number(value),
+                    : value,
         }));
     };
 
@@ -40,7 +45,9 @@ export default function SpoolForm({ onSuccess, onCancel }: SpoolFormProps) {
         try {
             await api.createSpool({
                 material_id: formData.material_id,
-                original_weight: formData.original_weight,  // ← CHANGED
+                material_type: formData.material_type || null,
+                color: formData.color || null,
+                original_weight: formData.original_weight,
                 empty_spool_weight: formData.empty_spool_weight,
                 low_stock_threshold: formData.low_stock_threshold,
             });
@@ -64,6 +71,30 @@ export default function SpoolForm({ onSuccess, onCancel }: SpoolFormProps) {
                     value={formData.material_id}
                     onChange={handleChange}
                     required
+                />
+            </div>
+
+            <div className="form-group">
+                <label htmlFor="material_type">Material Type</label>
+                <input
+                    id="material_type"
+                    name="material_type"
+                    type="text"
+                    placeholder="e.g., PLA, PETG, ABS"
+                    value={formData.material_type}
+                    onChange={handleChange}
+                />
+            </div>
+
+            <div className="form-group">
+                <label htmlFor="color">Color</label>
+                <input
+                    id="color"
+                    name="color"
+                    type="text"
+                    placeholder="e.g., Black, Red, Blue"
+                    value={formData.color}
+                    onChange={handleChange}
                 />
             </div>
 

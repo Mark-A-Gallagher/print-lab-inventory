@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { api } from "../api/client";
 import LowStockBadge from "../components/LowStockBadge";
-import type { Spool, Machine, InventoryEvent } from "../types";
+import type { Spool, Machine, Material, InventoryEvent } from "../types";
 import "./SpoolDetail.css";
 
 export default function SpoolDetail() {
@@ -13,11 +13,12 @@ export default function SpoolDetail() {
     const spoolId = id ? Number(id) : null;
 
     const [spool, setSpool] = useState<Spool | null>(null);
+    const [material, setMaterial] = useState<Material | null>(null);
     const [machines, setMachines] = useState<Machine[]>([]);
     const [history, setHistory] = useState<InventoryEvent[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [weightAdjustment, setWeightAdjustment] = useState("");
+    const [weightInput, setWeightInput] = useState("");
     const [note, setNote] = useState("");
     const [submitting, setSubmitting] = useState(false);
 
@@ -51,12 +52,13 @@ export default function SpoolDetail() {
 
     const handleWeightUpdate = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!spool || !weightAdjustment || submitting) return;
+        if (!spool || !weightInput || submitting) return;
 
         try {
             setSubmitting(true);
-            await api.updateSpoolWeight(spool.id, Number(weightAdjustment), note);
-            setWeightAdjustment("");
+            // weightInput is the new total weight, not a change
+            await api.updateSpoolWeight(spool.id, Number(weightInput), "system", note);
+            setWeightInput("");
             setNote("");
             await loadData();
         } catch (err) {
@@ -70,10 +72,13 @@ export default function SpoolDetail() {
         if (!spool) return;
 
         try {
-            await api.assignSpoolToMachine(spool.id, machineId);
+            setSubmitting(true);
+            await api.assignSpoolToMachine(spool.id, machineId, "system");
             await loadData();
         } catch (err) {
             setError(err instanceof Error ? err.message : "Failed to assign machine");
+        } finally {
+            setSubmitting(false);
         }
     };
 
@@ -81,10 +86,26 @@ export default function SpoolDetail() {
         if (!spool) return;
 
         try {
-            await api.unassignSpool(spool.id);
+            setSubmitting(true);
+            await api.unassignSpool(spool.id, "system");
             await loadData();
         } catch (err) {
             setError(err instanceof Error ? err.message : "Failed to unassign");
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    const handleDeleteSpool = async () => {
+        if (!spool || !window.confirm("Are you sure you want to delete this spool? This cannot be undone.")) return;
+
+        try {
+            setSubmitting(true);
+            await api.deleteSpool(spool.id);
+            navigate("/inventory");
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "Failed to delete spool");
+            setSubmitting(false);
         }
     };
 
@@ -173,18 +194,18 @@ export default function SpoolDetail() {
 
                 <div className="actions-sidebar">
                     <div className="action-card">
-                        <h3>Record Usage</h3>
+                        <h3>Record Weight</h3>
                         <form onSubmit={handleWeightUpdate}>
                             <div className="form-group">
-                                <label htmlFor="weight">Weight Change (g)</label>
+                                <label htmlFor="weight">New Total Weight (g)</label>
                                 <input
                                     id="weight"
                                     type="number"
-                                    value={weightAdjustment}
-                                    onChange={(e) => setWeightAdjustment(e.target.value)}
+                                    value={weightInput}
+                                    onChange={(e) => setWeightInput(e.target.value)}
                                     step="0.1"
                                     disabled={submitting}
-                                    placeholder="e.g., -25.5"
+                                    placeholder={`Current: ${spool.current_weight.toFixed(1)}g`}
                                 />
                             </div>
                             <div className="form-group">
@@ -198,10 +219,21 @@ export default function SpoolDetail() {
                                     placeholder="e.g., Print job completed"
                                 />
                             </div>
-                            <button type="submit" disabled={!weightAdjustment || submitting}>
+                            <button type="submit" disabled={!weightInput || submitting}>
                                 {submitting ? "Updating..." : "Update Weight"}
                             </button>
                         </form>
+                    </div>
+
+                    <div className="action-card">
+                        <h3>Danger Zone</h3>
+                        <button
+                            className="btn-delete"
+                            onClick={handleDeleteSpool}
+                            disabled={submitting}
+                        >
+                            {submitting ? "Deleting..." : "Delete Spool"}
+                        </button>
                     </div>
 
                     {history.length > 0 && (

@@ -1,4 +1,3 @@
-# spools.py (API router)
 #
 # DESIGN.md ref: Section 9 - Spool endpoints
 #
@@ -67,6 +66,15 @@ def create_spool(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Material with id {spool_data.material_id} not found",
         )
+
+    # If material_type or color are provided, update the material record
+    if spool_data.material_type or spool_data.color:
+        if spool_data.material_type:
+            material.name = spool_data.material_type
+        if spool_data.color:
+            material.color = spool_data.color
+        db.add(material)
+        db.flush()
 
     # Create the Spool row
     spool = Spool(
@@ -320,7 +328,7 @@ def assign_to_machine_endpoint(
 @router.post("/{spool_id}/unassign", status_code=status.HTTP_204_NO_CONTENT)
 def unassign_from_machine_endpoint(
     spool_id: int,
-    user_id: str,
+    assignment_data: SpoolAssignment,
     db: Session = Depends(get_db),  # noqa: B008
 ) -> None:
     """
@@ -332,7 +340,7 @@ def unassign_from_machine_endpoint(
 
     Args:
         spool_id: The ID of the spool being unassigned
-        user_id: Identifier of the person performing the action (query parameter)
+        user_id: Identifier of the person performing the action
         db: Database session
 
     Raises:
@@ -348,9 +356,43 @@ def unassign_from_machine_endpoint(
         )
 
     try:
-        remove_from_machine(db=db, spool_id=spool_id, user_id=user_id)
+        remove_from_machine(db=db, spool_id=spool_id, user_id=assignment_data.user_id)
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=str(e),
         )
+
+
+@router.delete("/{spool_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_spool(
+    spool_id: int,
+    db: Session = Depends(get_db),  # noqa: B008
+) -> None:
+    """
+    Delete a spool and all its associated inventory events.
+
+    This is a destructive operation and cannot be undone.
+
+    Args:
+        spool_id: The ID of the spool to delete
+        db: Database session
+
+    Raises:
+        HTTPException 404: If the spool does not exist
+    """
+    from app.models import InventoryEvent
+
+    spool = db.query(Spool).filter(Spool.id == spool_id).first()
+    if not spool:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Spool with id {spool_id} not found",
+        )
+
+    # Delete all inventory events associated with this spool
+    db.query(InventoryEvent).filter(InventoryEvent.spool_id == spool_id).delete()
+
+    # Delete the spool itself
+    db.delete(spool)
+    db.commit()

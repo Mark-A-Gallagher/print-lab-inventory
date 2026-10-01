@@ -47,24 +47,29 @@ export const api = {
             method: "POST",
             body: JSON.stringify(payload),
         }),
-    updateSpoolWeight: (id: number, quantityChange: number, note?: string) =>
+    updateSpoolWeight: (id: number, newTotalWeight: number, userId: string = "system", note?: string) =>
         request<InventoryEvent>(`/spools/${id}/weight`, {
             method: "POST",
-            body: JSON.stringify({ quantity_change: quantityChange, note }),
+            body: JSON.stringify({ new_total_weight: newTotalWeight, user_id: userId, note }),
         }),
     correctSpool: (id: number, relatedEventId: number, note: string) =>
         request<InventoryEvent>(`/spools/${id}/correct`, {
             method: "POST",
             body: JSON.stringify({ related_event_id: relatedEventId, note }),
         }),
-    assignSpoolToMachine: (id: number, machineId: number) =>
+    assignSpoolToMachine: (id: number, machineId: number, userId: string = "system") =>
         request<InventoryEvent>(`/spools/${id}/assign`, {
             method: "POST",
-            body: JSON.stringify({ machine_id: machineId }),
+            body: JSON.stringify({ machine_id: machineId, user_id: userId }),
         }),
-    unassignSpool: (id: number) =>
+    unassignSpool: (id: number, userId: string = "system") =>
         request<InventoryEvent>(`/spools/${id}/unassign`, {
             method: "POST",
+            body: JSON.stringify({ user_id: userId }),
+        }),
+    deleteSpool: (id: number) =>
+        request<void>(`/spools/${id}`, {
+            method: "DELETE",
         }),
 
     // Machines
