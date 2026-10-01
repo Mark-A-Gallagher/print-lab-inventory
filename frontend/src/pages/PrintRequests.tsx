@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { api } from "../api/client";
 import ReservationForm from "../components/ReservationForm";
+import Modal from "../components/Modal";
+import PrintRequestForm from "../components/PrintRequestForm";
 import type { PrintRequest, Spool } from "../types";
 import "./PrintRequests.css";
 
@@ -15,6 +17,7 @@ export default function PrintRequests() {
         null
     );
     const [reservationLoading, setReservationLoading] = useState(false);
+    const [showRequestForm, setShowRequestForm] = useState(false);
 
     useEffect(() => {
         loadData();
@@ -47,7 +50,6 @@ export default function PrintRequests() {
                 amount,
             });
 
-            // Reload data
             await loadData();
             setSelectedRequest(null);
             setError(null);
@@ -65,100 +67,124 @@ export default function PrintRequests() {
     const groupedRequests = {
         pending: requests.filter((r) => r.status === "Pending"),
         active: requests.filter((r) => ["Approved", "Printing"].includes(r.status)),
-        completed: requests.filter((r) => [
-            "Complete",
-            "Rejected",
-        ].includes(r.status)),
+        completed: requests.filter((r) =>
+            ["Complete", "Rejected"].includes(r.status)
+        ),
     };
 
     return (
-        <div className="print-requests">
-            <h1>Print Requests</h1>
-
-            <div className="requests-container">
-                <div className="requests-list">
-                    <div className="request-section">
-                        <h2>Pending ({groupedRequests.pending.length})</h2>
-                        {groupedRequests.pending.length === 0 ? (
-                            <p className="empty-text">No pending requests</p>
-                        ) : (
-                            <div className="request-cards">
-                                {groupedRequests.pending.map((req) => (
-                                    <div
-                                        key={req.id}
-                                        className={`request-card ${selectedRequest?.id === req.id ? "selected" : ""}`}
-                                        onClick={() =>
-                                            setSelectedRequest(
-                                                selectedRequest?.id === req.id ? null : req
-                                            )
-                                        }
-                                    >
-                                        <h4>{req.project_name}</h4>
-                                        <p className="by">by {req.requested_by}</p>
-                                        <p className="amount">Amount: {req.amount_required}g</p>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-
-                    <div className="request-section">
-                        <h2>Active ({groupedRequests.active.length})</h2>
-                        {groupedRequests.active.length === 0 ? (
-                            <p className="empty-text">No active requests</p>
-                        ) : (
-                            <div className="request-cards">
-                                {groupedRequests.active.map((req) => (
-                                    <div key={req.id} className="request-card active">
-                                        <h4>{req.project_name}</h4>
-                                        <p className="by">by {req.requested_by}</p>
-                                        <p className={`status status-${req.status.toLowerCase()}`}>
-                                            {req.status}
-                                        </p>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-
-                    <div className="request-section">
-                        <h2>Completed ({groupedRequests.completed.length})</h2>
-                        {groupedRequests.completed.length === 0 ? (
-                            <p className="empty-text">No completed requests</p>
-                        ) : (
-                            <div className="request-cards">
-                                {groupedRequests.completed.map((req) => (
-                                    <div key={req.id} className="request-card completed">
-                                        <h4>{req.project_name}</h4>
-                                        <p className="by">by {req.requested_by}</p>
-                                        <p className={`status status-${req.status.toLowerCase()}`}>
-                                            {req.status}
-                                        </p>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
+        <>
+            <div className="print-requests">
+                <div className="print-requests-header">
+                    <h1>Print Requests</h1>
+                    <button
+                        className="btn-primary"
+                        onClick={() => setShowRequestForm(true)}
+                    >
+                        + Add Request
+                    </button>
                 </div>
 
-                {selectedRequest && availableSpools.length > 0 && (
-                    <div className="reservation-panel">
-                        <h3>Reserve Filament for {selectedRequest.project_name}</h3>
-                        <ReservationForm
-                            request={selectedRequest}
-                            availableSpools={availableSpools}
-                            onReserve={handleReserve}
-                            loading={reservationLoading}
-                        />
-                    </div>
-                )}
+                <div className="requests-container">
+                    <div className="requests-list">
+                        <div className="request-section">
+                            <h2>Pending ({groupedRequests.pending.length})</h2>
+                            {groupedRequests.pending.length === 0 ? (
+                                <p className="empty-text">No pending requests</p>
+                            ) : (
+                                <div className="request-cards">
+                                    {groupedRequests.pending.map((req) => (
+                                        <div
+                                            key={req.id}
+                                            className={`request-card ${selectedRequest?.id === req.id ? "selected" : ""
+                                                }`}
+                                            onClick={() =>
+                                                setSelectedRequest(
+                                                    selectedRequest?.id === req.id ? null : req
+                                                )
+                                            }
+                                        >
+                                            <h4>{req.project_name}</h4>
+                                            <p className="by">by {req.requested_by}</p>
+                                            <p className="amount">Amount: {req.amount_required}g</p>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
 
-                {selectedRequest && availableSpools.length === 0 && (
-                    <div className="no-spools-message">
-                        No filament available to reserve
+                        <div className="request-section">
+                            <h2>Active ({groupedRequests.active.length})</h2>
+                            {groupedRequests.active.length === 0 ? (
+                                <p className="empty-text">No active requests</p>
+                            ) : (
+                                <div className="request-cards">
+                                    {groupedRequests.active.map((req) => (
+                                        <div key={req.id} className="request-card active">
+                                            <h4>{req.project_name}</h4>
+                                            <p className="by">by {req.requested_by}</p>
+                                            <p className={`status status-${req.status.toLowerCase()}`}>
+                                                {req.status}
+                                            </p>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="request-section">
+                            <h2>Completed ({groupedRequests.completed.length})</h2>
+                            {groupedRequests.completed.length === 0 ? (
+                                <p className="empty-text">No completed requests</p>
+                            ) : (
+                                <div className="request-cards">
+                                    {groupedRequests.completed.map((req) => (
+                                        <div key={req.id} className="request-card completed">
+                                            <h4>{req.project_name}</h4>
+                                            <p className="by">by {req.requested_by}</p>
+                                            <p className={`status status-${req.status.toLowerCase()}`}>
+                                                {req.status}
+                                            </p>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
                     </div>
-                )}
+
+                    {selectedRequest && availableSpools.length > 0 && (
+                        <div className="reservation-panel">
+                            <h3>Reserve Filament for {selectedRequest.project_name}</h3>
+                            <ReservationForm
+                                request={selectedRequest}
+                                availableSpools={availableSpools}
+                                onReserve={handleReserve}
+                                loading={reservationLoading}
+                            />
+                        </div>
+                    )}
+
+                    {selectedRequest && availableSpools.length === 0 && (
+                        <div className="no-spools-message">
+                            No filament available to reserve
+                        </div>
+                    )}
+                </div>
             </div>
-        </div>
+
+            <Modal
+                isOpen={showRequestForm}
+                title="Create Print Request"
+                onClose={() => setShowRequestForm(false)}
+            >
+                <PrintRequestForm
+                    onSuccess={async () => {
+                        setShowRequestForm(false);
+                        await loadData();
+                    }}
+                    onCancel={() => setShowRequestForm(false)}
+                />
+            </Modal>
+        </>
     );
 }
