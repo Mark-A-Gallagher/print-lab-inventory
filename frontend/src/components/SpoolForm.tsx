@@ -11,9 +11,9 @@ interface SpoolFormProps {
 export default function SpoolForm({ onSuccess, onCancel }: SpoolFormProps) {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [formData, setFormData] = useState<SpoolCreate>({
+    const [formData, setFormData] = useState({
         material_id: 1,
-        original_filament_weight: 1000,
+        original_weight: 1000,
         empty_spool_weight: 100,
         low_stock_threshold: 200,
     });
@@ -38,7 +38,12 @@ export default function SpoolForm({ onSuccess, onCancel }: SpoolFormProps) {
         setLoading(true);
 
         try {
-            await api.createSpool(formData);
+            await api.createSpool({
+                material_id: formData.material_id,
+                original_weight: formData.original_weight,  // ← CHANGED
+                empty_spool_weight: formData.empty_spool_weight,
+                low_stock_threshold: formData.low_stock_threshold,
+            });
             onSuccess();
         } catch (err) {
             setError(err instanceof Error ? err.message : "Failed to create spool");
@@ -63,16 +68,16 @@ export default function SpoolForm({ onSuccess, onCancel }: SpoolFormProps) {
             </div>
 
             <div className="form-group">
-                <label htmlFor="original_filament_weight">
+                <label htmlFor="original_weight">
                     Original Filament Weight (g) *
                 </label>
                 <input
-                    id="original_filament_weight"
-                    name="original_filament_weight"
+                    id="original_weight"
+                    name="original_weight"
                     type="number"
                     min="1"
                     step="0.1"
-                    value={formData.original_filament_weight}
+                    value={formData.original_weight}
                     onChange={handleChange}
                     required
                 />

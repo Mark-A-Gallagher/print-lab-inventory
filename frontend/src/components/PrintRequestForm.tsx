@@ -14,11 +14,11 @@ export default function PrintRequestForm({
 }: PrintRequestFormProps) {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [formData, setFormData] = useState<PrintRequestCreate>({
+    const [formData, setFormData] = useState({
         requested_by: "",
         project_name: "",
         material_id: 1,
-        amount_required: 100,
+        amount_grams: 100,  // ← CHANGED from amount_required
     });
 
     const handleChange = (
@@ -29,7 +29,7 @@ export default function PrintRequestForm({
         setFormData((prev) => ({
             ...prev,
             [name]:
-                name === "material_id" || name === "amount_required"
+                name === "material_id" || name === "amount_grams"  // ← CHANGED
                     ? Number(value)
                     : value,
         }));
@@ -41,7 +41,12 @@ export default function PrintRequestForm({
         setLoading(true);
 
         try {
-            await api.createPrintRequest(formData);
+            await api.createPrintRequest({
+                requested_by: formData.requested_by,
+                project_name: formData.project_name,
+                material_id: formData.material_id,
+                amount_grams: formData.amount_grams,  // ← CHANGED
+            });
             onSuccess();
         } catch (err) {
             setError(
@@ -94,14 +99,14 @@ export default function PrintRequestForm({
             </div>
 
             <div className="form-group">
-                <label htmlFor="amount_required">Amount Required (g) *</label>
+                <label htmlFor="amount_grams">Amount Required (g) *</label>
                 <input
-                    id="amount_required"
-                    name="amount_required"
+                    id="amount_grams"
+                    name="amount_grams"
                     type="number"
                     min="1"
                     step="0.1"
-                    value={formData.amount_required}
+                    value={formData.amount_grams}
                     onChange={handleChange}
                     required
                 />

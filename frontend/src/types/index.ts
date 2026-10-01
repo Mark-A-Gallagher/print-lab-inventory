@@ -51,7 +51,7 @@ export type PrintRequestCreate = {
     requested_by: string;
     project_name: string;
     material_id: number;
-    amount_required: number;
+    amount_grams: number;
 };
 
 export type ReservationCreate = {
