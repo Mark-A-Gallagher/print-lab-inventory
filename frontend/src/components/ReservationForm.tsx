@@ -18,7 +18,7 @@ export default function ReservationForm({
     loading = false,
 }: ReservationFormProps) {
     const [selectedSpoolId, setSelectedSpoolId] = useState<number | null>(null);
-    const [amount, setAmount] = useState(request.amount_required);
+    const [amount, setAmount] = useState(request.amount_grams);
     const [error, setError] = useState<string | null>(null);
 
     const selectedSpool = availableSpools.find((s) => s.id === selectedSpoolId);
@@ -39,7 +39,7 @@ export default function ReservationForm({
         try {
             await onReserve(selectedSpoolId, amount);
             setSelectedSpoolId(null);
-            setAmount(request.amount_required);
+            setAmount(request.amount_grams);
         } catch (err) {
             setError(
                 err instanceof Error ? err.message : "Failed to create reservation"
@@ -74,7 +74,7 @@ export default function ReservationForm({
                     value={amount}
                     onChange={(e) => setAmount(Number(e.target.value))}
                     disabled={loading}
-                    max={selectedSpool?.available ?? request.amount_required}
+                    max={selectedSpool?.available ?? request.amount_grams}
                     step="0.1"
                 />
             </div>

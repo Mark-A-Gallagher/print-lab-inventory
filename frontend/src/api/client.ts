@@ -80,6 +80,11 @@ export const api = {
             body: JSON.stringify(payload),
         }),
 
+    deleteMachine: (id: number) =>
+        request<void>(`/machines/${id}`, {
+            method: "DELETE",
+        }),
+
     // Print Requests
     createPrintRequest: (payload: PrintRequestCreate) =>
         request<PrintRequest>("/requests", {

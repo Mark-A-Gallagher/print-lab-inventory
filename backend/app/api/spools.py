@@ -12,11 +12,13 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models import InventoryEventType, Material, Spool
+from app.models.machine import MACHINE_RETIRED
 from app.schemas.spool import (
     SpoolAssignment,
     SpoolCorrection,
     SpoolCreate,
     SpoolOut,
+    SpoolUnassignment,
     WeightUpdate,
 )
 from app.services.inventory import (
@@ -30,6 +32,23 @@ from app.services.inventory import (
 from app.services.reservations import get_available, get_reserved_amount
 
 router = APIRouter()
+
+
+def _to_spool_out(db: Session, spool: Spool) -> SpoolOut:
+    """Build a SpoolOut: stored fields, material info, and event-derived fields."""
+    material = db.get(Material, spool.material_id)
+    return SpoolOut(
+        id=spool.id,
+        material_id=spool.material_id,
+        original_weight=spool.original_weight,
+        low_stock_threshold=spool.low_stock_threshold,
+        material_type=material.name if material else None,
+        color=material.color if material else None,
+        current_weight=get_current_weight(db, spool.id),
+        current_machine_id=get_current_machine(db, spool.id),
+        reserved_amount=get_reserved_amount(db, spool.id),
+        available=get_available(db, spool.id),
+    )
 
 
 @router.post("/", response_model=SpoolOut, status_code=status.HTTP_201_CREATED)
@@ -67,18 +86,26 @@ def create_spool(
             detail=f"Material with id {spool_data.material_id} not found",
         )
 
-    # If material_type or color are provided, update the material record
+    # If material_type or color are provided, use the material with that
+    # type/color (creating it if needed). Never edit the existing row:
+    # other spools share it and would silently change type/color.
     if spool_data.material_type or spool_data.color:
-        if spool_data.material_type:
-            material.name = spool_data.material_type
-        if spool_data.color:
-            material.color = spool_data.color
-        db.add(material)
-        db.flush()
+        name = spool_data.material_type or material.name
+        color = spool_data.color or material.color
+        match = db.query(Material).filter(Material.name == name)
+        match = match.filter(
+            Material.color.is_(None) if color is None else Material.color == color
+        )
+        found = match.first()
+        if found is None:
+            found = Material(name=name, color=color)
+            db.add(found)
+            db.flush()
+        material = found
 
     # Create the Spool row
     spool = Spool(
-        material_id=spool_data.material_id,
+        material_id=material.id,
         original_weight=spool_data.original_weight,
         empty_spool_weight=spool_data.empty_spool_weight,
         low_stock_threshold=spool_data.low_stock_threshold,
@@ -97,16 +124,7 @@ def create_spool(
     db.commit()
 
     # Build the response with derived fields
-    return SpoolOut(
-        id=spool.id,
-        material_id=spool.material_id,
-        original_weight=spool.original_weight,
-        low_stock_threshold=spool.low_stock_threshold,
-        current_weight=get_current_weight(db, spool.id),
-        current_machine_id=get_current_machine(db, spool.id),
-        reserved_amount=get_reserved_amount(db, spool.id),
-        available=get_available(db, spool.id),
-    )
+    return _to_spool_out(db, spool)
 
 
 @router.get("/", response_model=list[SpoolOut])
@@ -128,16 +146,7 @@ def list_spools(db: Session = Depends(get_db)) -> list[SpoolOut]:  # noqa: B008
     response = []
     for spool in spools:
         response.append(
-            SpoolOut(
-                id=spool.id,
-                material_id=spool.material_id,
-                original_weight=spool.original_weight,
-                low_stock_threshold=spool.low_stock_threshold,
-                current_weight=get_current_weight(db, spool.id),
-                current_machine_id=get_current_machine(db, spool.id),
-                reserved_amount=get_reserved_amount(db, spool.id),
-                available=get_available(db, spool.id),
-            )
+            _to_spool_out(db, spool)
         )
 
     return response
@@ -170,16 +179,7 @@ def get_spool(
             detail=f"Spool with id {spool_id} not found",
         )
 
-    return SpoolOut(
-        id=spool.id,
-        material_id=spool.material_id,
-        original_weight=spool.original_weight,
-        low_stock_threshold=spool.low_stock_threshold,
-        current_weight=get_current_weight(db, spool.id),
-        current_machine_id=get_current_machine(db, spool.id),
-        reserved_amount=get_reserved_amount(db, spool.id),
-        available=get_available(db, spool.id),
-    )
+    return _to_spool_out(db, spool)
 
 
 @router.post("/{spool_id}/weight", status_code=status.HTTP_204_NO_CONTENT)
@@ -305,7 +305,7 @@ def assign_to_machine_endpoint(
 
     # Validate that the machine exists
     machine = db.query(Machine).filter(Machine.id == assignment_data.machine_id).first()
-    if not machine:
+    if not machine or machine.status == MACHINE_RETIRED:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Machine with id {assignment_data.machine_id} not found",
@@ -328,7 +328,7 @@ def assign_to_machine_endpoint(
 @router.post("/{spool_id}/unassign", status_code=status.HTTP_204_NO_CONTENT)
 def unassign_from_machine_endpoint(
     spool_id: int,
-    assignment_data: SpoolAssignment,
+    assignment_data: SpoolUnassignment,
     db: Session = Depends(get_db),  # noqa: B008
 ) -> None:
     """

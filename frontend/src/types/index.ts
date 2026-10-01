@@ -19,6 +19,10 @@ export type Spool = {
     empty_spool_weight: number;
     low_stock_threshold: number;
 
+    // From the spool's material
+    material_type?: string | null;
+    color?: string | null;
+
     // Derived values from backend event stream
     current_weight: number;
     current_machine_id: number | null;
@@ -31,7 +35,7 @@ export type PrintRequest = {
     requested_by: string;
     project_name: string;
     material_id: number;
-    amount_required: number;
+    amount_grams: number;
     status: "Pending" | "Approved" | "Printing" | "Complete" | "Rejected";
 };
 
@@ -59,6 +63,7 @@ export type PrintRequestCreate = {
 export type ReservationCreate = {
     spool_id: number;
     amount: number;
+    user_id: string;
 };
 
 export type InventoryEvent = {

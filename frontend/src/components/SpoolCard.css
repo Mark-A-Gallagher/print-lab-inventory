@@ -55,3 +55,18 @@
     background: #ecf8f5;
     border-radius: 4px;
 }
+
+.material-color {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.85rem;
+    color: #7f8c8d;
+}
+
+.color-swatch {
+    width: 0.9rem;
+    height: 0.9rem;
+    border-radius: 50%;
+    border: 1px solid #bdc3c7;
+}

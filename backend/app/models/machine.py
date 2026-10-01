@@ -9,6 +9,11 @@ from sqlalchemy.orm import Mapped, mapped_column
 from app.database import Base
 
 
+# Status given to a removed machine that still has event history.
+# Hidden from the API; the row stays so old events keep a valid machine_id.
+MACHINE_RETIRED = "retired"
+
+
 class Machine(Base):
     """
     Represents a 3D printer in the lab.

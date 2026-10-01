@@ -13,6 +13,8 @@ export default function Machines() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [showMachineForm, setShowMachineForm] = useState(false);
+    const [actionError, setActionError] = useState<string | null>(null);
+    const [busy, setBusy] = useState(false);
 
     useEffect(() => {
         loadData();
@@ -38,8 +40,30 @@ export default function Machines() {
     if (loading) return <div className="loading">Loading machines...</div>;
     if (error) return <div className="error">Error: {error}</div>;
 
-    const getAssignedSpool = (machineId: number) => {
-        return spools.find((s) => s.current_machine_id === machineId);
+    const getAssignedSpools = (machineId: number) => {
+        return spools.filter((s) => s.current_machine_id === machineId);
+    };
+
+    // Errors from remove/delete show inline so the page stays usable.
+    const runAction = async (action: () => Promise<void>) => {
+        try {
+            setBusy(true);
+            setActionError(null);
+            await action();
+            await loadData();
+        } catch (err) {
+            setActionError(err instanceof Error ? err.message : "Action failed");
+        } finally {
+            setBusy(false);
+        }
+    };
+
+    const handleRemoveSpool = (spoolId: number) =>
+        runAction(() => api.unassignSpool(spoolId, "system").then(() => undefined));
+
+    const handleDeleteMachine = (machine: Machine) => {
+        if (!window.confirm(`Remove "${machine.name}"? This cannot be undone.`)) return;
+        return runAction(() => api.deleteMachine(machine.id));
     };
 
     return (
@@ -55,12 +79,14 @@ export default function Machines() {
                     </button>
                 </div>
 
+                {actionError && <div className="action-error">{actionError}</div>}
+
                 {machines.length === 0 ? (
                     <div className="empty-state">No machines configured</div>
                 ) : (
                     <div className="machines-grid">
                         {machines.map((machine) => {
-                            const assignedSpool = getAssignedSpool(machine.id);
+                            const assignedSpools = getAssignedSpools(machine.id);
 
                             return (
                                 <div key={machine.id} className="machine-card">
@@ -74,19 +100,45 @@ export default function Machines() {
                                     </div>
 
                                     <div className="machine-info">
-                                        {assignedSpool ? (
-                                            <>
-                                                <p className="assigned-label">Currently Printing:</p>
-                                                <p className="spool-info">
-                                                    Spool #{assignedSpool.id}
-                                                </p>
-                                                <p className="weight-info">
-                                                    {assignedSpool.current_weight.toFixed(1)}g available
-                                                </p>
-                                            </>
+                                        {assignedSpools.length > 0 ? (
+                                            assignedSpools.map((spool) => (
+                                                <div key={spool.id} className="assigned-spool">
+                                                    <p className="assigned-label">Currently Printing:</p>
+                                                    <p className="spool-info">
+                                                        {spool.material_type ?? "Spool"}
+                                                        {spool.color ? ` · ${spool.color}` : ""}
+                                                        {` (#${spool.id})`}
+                                                    </p>
+                                                    <p className="weight-info">
+                                                        {spool.current_weight.toFixed(1)}g available
+                                                    </p>
+                                                    <button
+                                                        className="btn-remove-spool"
+                                                        onClick={() => handleRemoveSpool(spool.id)}
+                                                        disabled={busy}
+                                                    >
+                                                        Remove filament
+                                                    </button>
+                                                </div>
+                                            ))
                                         ) : (
                                             <p className="no-spool">No filament assigned</p>
                                         )}
+                                    </div>
+
+                                    <div className="machine-actions">
+                                        <button
+                                            className="btn-delete-machine"
+                                            onClick={() => handleDeleteMachine(machine)}
+                                            disabled={busy || assignedSpools.length > 0}
+                                            title={
+                                                assignedSpools.length > 0
+                                                    ? "Remove the filament first"
+                                                    : "Remove this printer"
+                                            }
+                                        >
+                                            Remove printer
+                                        </button>
                                     </div>
                                 </div>
                             );

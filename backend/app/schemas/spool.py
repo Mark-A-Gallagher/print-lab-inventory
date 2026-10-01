@@ -20,6 +20,10 @@ class SpoolOut(BaseModel):
     original_weight: float
     low_stock_threshold: float
 
+    # From the spool's material, so cards can show what is on the spool.
+    material_type: str | None = None
+    color: str | None = None
+
     # Derived from inventory and reservation events.
     current_weight: float
     current_machine_id: int | None
@@ -36,6 +40,12 @@ class WeightUpdate(BaseModel):
 
 class SpoolAssignment(BaseModel):
     machine_id: int
+    user_id: str = Field(min_length=1, max_length=100)
+
+
+class SpoolUnassignment(BaseModel):
+    # The machine is looked up from the spool's current assignment,
+    # so the caller only says who is doing it.
     user_id: str = Field(min_length=1, max_length=100)
 
 

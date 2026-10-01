@@ -181,18 +181,18 @@ def reserve(
 
     # Validate that the spool exists
     spool = (
-        db.query(Spool).filter(Spool.id == reservation_data.print_request_id).first()
+        db.query(Spool).filter(Spool.id == reservation_data.spool_id).first()
     )
     if not spool:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Spool with id {reservation_data.print_request_id} not found",
+            detail=f"Spool with id {reservation_data.spool_id} not found",
         )
 
     try:
         reservation = create_reservation(
             db=db,
-            spool_id=reservation_data.print_request_id,
+            spool_id=reservation_data.spool_id,
             print_request_id=request_id,
             amount=reservation_data.amount,
             user_id=reservation_data.user_id,

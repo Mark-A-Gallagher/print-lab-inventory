@@ -16,13 +16,21 @@ export default function SpoolCard({
     onClick,
 }: SpoolCardProps) {
     const handleClick = () => onClick?.(spool.id);
+    const typeLabel = spool.material_type ?? material?.name;
+    const color = spool.color ?? material?.color;
 
     return (
         <div className="spool-card" onClick={handleClick}>
             <div className="spool-header">
-                <h3>{material?.name ?? `Spool #${spool.id}`}</h3>
-                {material?.color && (
-                    <span className="material-color">{material.color}</span>
+                <h3>{typeLabel ?? `Spool #${spool.id}`}</h3>
+                {color && (
+                    <span className="material-color">
+                        <span
+                            className="color-swatch"
+                            style={{ backgroundColor: color.replace(/\s+/g, "").toLowerCase() }}
+                        />
+                        {color}
+                    </span>
                 )}
                 <LowStockBadge
                     current={spool.current_weight}

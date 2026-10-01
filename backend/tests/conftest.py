@@ -35,7 +35,40 @@ def db_session():
     test_engine.dispose()
 
 
-#
-# TODO: once your API routers are implemented, add a `client` fixture
-#   wrapping FastAPI's TestClient for endpoint-level tests, not just
-#   service-level tests.
+@pytest.fixture
+def client():
+    """
+    FastAPI TestClient wired to a fresh in-memory database.
+
+    `client.session_factory()` opens a session on that same database,
+    for seeding rows (e.g. materials) that have no API endpoint.
+    """
+    from app.database import get_db
+    from app.main import app
+    from fastapi.testclient import TestClient
+    from sqlalchemy.orm import sessionmaker
+    from sqlalchemy.pool import StaticPool
+
+    test_engine = create_engine(
+        "sqlite://",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,  # one shared connection so every session sees the same data
+    )
+    Base.metadata.create_all(test_engine)
+    session_factory = sessionmaker(bind=test_engine, autoflush=False)
+
+    def override_get_db():
+        session = session_factory()
+        try:
+            yield session
+        finally:
+            session.close()
+
+    app.dependency_overrides[get_db] = override_get_db
+    with TestClient(app) as test_client:
+        test_client.session_factory = session_factory
+        yield test_client
+
+    app.dependency_overrides.clear()
+    Base.metadata.drop_all(test_engine)
+    test_engine.dispose()

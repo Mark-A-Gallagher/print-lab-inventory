@@ -8,9 +8,22 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models import InventoryEvent, InventoryEventType, Machine
+from app.models.machine import MACHINE_RETIRED
 from app.schemas.machine import MachineCreate, MachineOut, MachineStatusUpdate
+from app.services.inventory import get_current_machine
 
 router = APIRouter()
+
+
+def _get_active_machine(db: Session, machine_id: int) -> Machine:
+    """Fetch a machine that has not been removed, or raise 404."""
+    machine = db.query(Machine).filter(Machine.id == machine_id).first()
+    if not machine or machine.status == MACHINE_RETIRED:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Machine with id {machine_id} not found",
+        )
+    return machine
 
 
 def get_current_spool_for_machine(db: Session, machine_id: int) -> int | None:
@@ -100,7 +113,7 @@ def list_machines(db: Session = Depends(get_db)) -> list[MachineOut]:  # noqa: B
     Returns:
         List of all machines with current assignments
     """
-    machines = db.query(Machine).all()
+    machines = db.query(Machine).filter(Machine.status != MACHINE_RETIRED).all()
 
     response = []
     for machine in machines:
@@ -134,12 +147,7 @@ def get_machine(
     Raises:
         HTTPException 404: If the machine does not exist
     """
-    machine = db.query(Machine).filter(Machine.id == machine_id).first()
-    if not machine:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Machine with id {machine_id} not found",
-        )
+    machine = _get_active_machine(db, machine_id)
 
     return MachineOut(
         id=machine.id,
@@ -172,12 +180,7 @@ def update_machine_status(
     Raises:
         HTTPException 404: If the machine does not exist
     """
-    machine = db.query(Machine).filter(Machine.id == machine_id).first()
-    if not machine:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Machine with id {machine_id} not found",
-        )
+    machine = _get_active_machine(db, machine_id)
 
     machine.status = status_data.status
     db.commit()
@@ -189,3 +192,44 @@ def update_machine_status(
         status=machine.status,
         current_spool_id=get_current_spool_for_machine(db, machine_id),
     )
+
+
+@router.delete("/{machine_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_machine(
+    machine_id: int,
+    db: Session = Depends(get_db),  # noqa: B008
+) -> None:
+    """
+    Remove a machine.
+
+    Inventory events are append-only and reference machines by id, so:
+      - a machine with no history is deleted outright
+      - a machine that appears in any event is retired instead (hidden
+        everywhere, row kept so history stays valid)
+
+    Raises:
+        HTTPException 404: If the machine does not exist
+        HTTPException 422: If a spool is still assigned to the machine
+    """
+    machine = _get_active_machine(db, machine_id)
+
+    # Spools that have ever been assigned to / removed from this machine.
+    spool_ids = [
+        row[0]
+        for row in db.query(InventoryEvent.spool_id)
+        .filter(InventoryEvent.machine_id == machine_id)
+        .distinct()
+        .all()
+    ]
+
+    if any(get_current_machine(db, sid) == machine_id for sid in spool_ids):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Machine still has filament assigned. Remove it first.",
+        )
+
+    if spool_ids:
+        machine.status = MACHINE_RETIRED
+    else:
+        db.delete(machine)
+    db.commit()

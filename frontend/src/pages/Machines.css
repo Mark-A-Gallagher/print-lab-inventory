@@ -119,3 +119,51 @@
         opacity: 1;
     }
 }
+
+.machine-actions {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #ecf0f1;
+}
+
+.btn-remove-spool,
+.btn-delete-machine {
+    padding: 0.4rem 0.9rem;
+    border-radius: 4px;
+    border: 1px solid #e74c3c;
+    background: white;
+    color: #e74c3c;
+    cursor: pointer;
+    font-size: 0.85rem;
+}
+
+.btn-remove-spool {
+    margin-top: 0.75rem;
+}
+
+.btn-remove-spool:hover:not(:disabled),
+.btn-delete-machine:hover:not(:disabled) {
+    background: #e74c3c;
+    color: white;
+}
+
+.btn-remove-spool:disabled,
+.btn-delete-machine:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.assigned-spool + .assigned-spool {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px dashed #ecf0f1;
+}
+
+.action-error {
+    margin-bottom: 1rem;
+    padding: 0.75rem 1rem;
+    border-radius: 4px;
+    background: #fadbd8;
+    color: #c0392b;
+    font-size: 0.9rem;
+}

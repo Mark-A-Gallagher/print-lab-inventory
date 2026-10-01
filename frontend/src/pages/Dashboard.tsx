@@ -107,7 +107,7 @@ export default function Dashboard() {
                         {pendingRequests.map((req) => (
                             <li key={req.id}>
                                 <strong>{req.project_name}</strong> by {req.requested_by} —{" "}
-                                {req.amount_required}g needed
+                                {req.amount_grams}g needed
                             </li>
                         ))}
                     </ul>

@@ -48,6 +48,7 @@ export default function PrintRequests() {
             await api.reserveForRequest(selectedRequest.id, {
                 spool_id: spoolId,
                 amount,
+                user_id: "system",
             });
 
             await loadData();
@@ -106,7 +107,7 @@ export default function PrintRequests() {
                                         >
                                             <h4>{req.project_name}</h4>
                                             <p className="by">by {req.requested_by}</p>
-                                            <p className="amount">Amount: {req.amount_required}g</p>
+                                            <p className="amount">Amount: {req.amount_grams}g</p>
                                         </div>
                                     ))}
                                 </div>

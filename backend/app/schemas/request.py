@@ -24,6 +24,8 @@ class PrintRequestOut(BaseModel):
 
 
 class ReservationCreate(BaseModel):
-    print_request_id: int
+    # The print request comes from the URL (/requests/{id}/reserve),
+    # so the body only needs the spool to reserve from.
+    spool_id: int
     amount: float = Field(gt=0)
     user_id: str = Field(min_length=1, max_length=100)
