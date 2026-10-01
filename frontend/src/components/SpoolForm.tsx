@@ -1,30 +1,28 @@
-import { FormEvent, useState } from "react";
+import { type FormEvent, useState } from "react";
 import { api } from "../api/client";
-import type { SpoolCreate, Material } from "../types";
+import type { SpoolCreate } from "../types";
 import "./SpoolForm.css";
 
 interface SpoolFormProps {
-    materials: Material[];
     onSuccess: () => void;
     onCancel: () => void;
 }
 
-export default function SpoolForm({
-    materials,
-    onSuccess,
-    onCancel,
-}: SpoolFormProps) {
+export default function SpoolForm({ onSuccess, onCancel }: SpoolFormProps) {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [formData, setFormData] = useState<SpoolCreate>({
-        material_id: materials[0]?.id ?? 0,
+        material_id: 1,
         original_filament_weight: 1000,
         empty_spool_weight: 100,
         low_stock_threshold: 200,
     });
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelect>) => {
+    const handleChange = (
+        e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+    ) => {
         const { name, value } = e.target;
+
         setFormData((prev) => ({
             ...prev,
             [name]:
@@ -43,9 +41,7 @@ export default function SpoolForm({
             await api.createSpool(formData);
             onSuccess();
         } catch (err) {
-            setError(
-                err instanceof Error ? err.message : "Failed to create spool"
-            );
+            setError(err instanceof Error ? err.message : "Failed to create spool");
         } finally {
             setLoading(false);
         }
@@ -54,22 +50,16 @@ export default function SpoolForm({
     return (
         <form className="spool-form" onSubmit={handleSubmit}>
             <div className="form-group">
-                <label htmlFor="material_id">Material *</label>
-                <select
+                <label htmlFor="material_id">Material ID *</label>
+                <input
                     id="material_id"
                     name="material_id"
+                    type="number"
+                    min="1"
                     value={formData.material_id}
                     onChange={handleChange}
                     required
-                >
-                    <option value="">-- Select a material --</option>
-                    {materials.map((material) => (
-                        <option key={material.id} value={material.id}>
-                            {material.name}
-                            {material.color ? ` (${material.color})` : ""}
-                        </option>
-                    ))}
-                </select>
+                />
             </div>
 
             <div className="form-group">
@@ -123,11 +113,7 @@ export default function SpoolForm({
             {error && <div className="error-message">{error}</div>}
 
             <div className="form-actions">
-                <button
-                    type="submit"
-                    className="btn-primary"
-                    disabled={loading || materials.length === 0}
-                >
+                <button type="submit" className="btn-primary" disabled={loading}>
                     {loading ? "Creating..." : "Create Spool"}
                 </button>
                 <button
