@@ -37,7 +37,7 @@ export type PrintRequest = {
 
 export type SpoolCreate = {
     material_id: number;
-    original_filament_weight: number;
+    original_weight: number;
     empty_spool_weight: number;
     low_stock_threshold: number;
 };
