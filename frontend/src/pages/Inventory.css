@@ -109,3 +109,28 @@
         opacity: 1;
     }
 }
+
+@media (max-width: 600px) {
+    .inventory-header {
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+    }
+
+    .inventory-header h1 {
+        font-size: 1.5rem;
+    }
+
+    .inventory-header .btn-primary {
+        padding: 0.65rem 0.8rem;
+        white-space: nowrap;
+    }
+
+    .spools-grid,
+    .inventory-stats {
+        grid-template-columns: 1fr;
+    }
+
+    .search-box {
+        margin-bottom: 1rem;
+    }
+}

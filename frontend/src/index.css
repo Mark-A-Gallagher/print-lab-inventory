@@ -45,3 +45,20 @@ a {
 a:hover {
     text-decoration: underline;
 }
+
+@media (max-width: 600px) {
+
+    input,
+    select,
+    textarea,
+    button {
+        max-width: 100%;
+    }
+
+    .form-actions,
+    .machine-actions,
+    .inventory-header,
+    .print-requests-header {
+        flex-wrap: wrap;
+    }
+}

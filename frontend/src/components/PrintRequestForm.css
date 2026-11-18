@@ -59,3 +59,9 @@
     border-radius: 8px;
     padding: 0.75rem;
 }
+
+@media (max-width: 600px) {
+    .print-request-form .form-actions {
+        flex-direction: column;
+    }
+}

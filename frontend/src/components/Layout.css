@@ -52,3 +52,36 @@
     padding: 2rem;
     width: 100%;
 }
+
+@media (max-width: 700px) {
+    .navbar {
+        padding: 0.75rem 0;
+    }
+
+    .navbar-container {
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+
+    .navbar-brand {
+        width: 100%;
+        font-size: 1.1rem;
+        text-align: center;
+    }
+
+    .nav-menu {
+        width: 100%;
+        justify-content: space-between;
+        gap: 0.25rem;
+        font-size: 0.82rem;
+    }
+
+    .nav-menu a {
+        display: block;
+        padding: 0.35rem 0.25rem;
+    }
+
+    .main-content {
+        padding: 1rem;
+    }
+}

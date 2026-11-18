@@ -187,3 +187,22 @@
 .assigned-spool {
     min-width: 0;
 }
+
+@media (max-width: 600px) {
+    .machines h1 {
+        margin-bottom: 1rem;
+        font-size: 1.5rem;
+    }
+
+    .machines-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .machine-card {
+        padding: 1rem;
+    }
+
+    .spool-slot {
+        grid-template-columns: 62px minmax(0, 1fr);
+    }
+}
