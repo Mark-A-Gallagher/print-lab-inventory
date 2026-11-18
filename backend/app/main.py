@@ -7,11 +7,11 @@
 # requests via your services layer before touching the database.
 #
 
-import os
 from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import inspect, text
 
 from app.api import machines, requests, spools
 from app.database import Base, engine
@@ -24,6 +24,34 @@ data_dir.mkdir(exist_ok=True)
 #
 # For production, use Alembic migrations (see alembic.ini).
 Base.metadata.create_all(bind=engine)
+
+# Lightweight upgrade for databases created before spool capacity existed.
+# This only runs for SQLite and only adds the missing column once.
+with engine.begin() as connection:
+    table_names = inspect(connection).get_table_names()
+    if "machines" in table_names:
+        columns = {
+            column["name"] for column in inspect(connection).get_columns("machines")
+        }
+        if "spool_capacity" not in columns:
+            connection.execute(
+                text(
+                    "ALTER TABLE machines "
+                    "ADD COLUMN spool_capacity INTEGER NOT NULL DEFAULT 1"
+                )
+            )
+    if "print_requests" in table_names:
+        columns = {
+            column["name"]
+            for column in inspect(connection).get_columns("print_requests")
+        }
+        if "color_count" not in columns:
+            connection.execute(
+                text(
+                    "ALTER TABLE print_requests "
+                    "ADD COLUMN color_count INTEGER NOT NULL DEFAULT 1"
+                )
+            )
 
 # Create the FastAPI app instance.
 app = FastAPI(
@@ -69,7 +97,7 @@ app.include_router(
 def health_check():
     """
     Health check endpoint for the API.
-    
+
     Returns a 200 OK status to confirm the service is running.
     """
     return {"status": "healthy"}

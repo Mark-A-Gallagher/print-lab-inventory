@@ -8,6 +8,7 @@ import type {
     Spool,
     SpoolCreate,
     ReservationCreate,
+    ReservationEvent,
     InventoryEvent,
 } from "../types";
 
@@ -106,5 +107,30 @@ export const api = {
         request(`/requests/${requestId}/fulfill`, {
             method: "POST",
             body: JSON.stringify({ spool_id: spoolId }),
+        }),
+    getRequestReservations: (requestId: number) =>
+        request<ReservationEvent[]>(`/requests/${requestId}/reservations`),
+    reserveRequestBatch: (
+        requestId: number,
+        allocations: Array<{ spoolId: number; amount: number }>
+    ) =>
+        request<ReservationEvent[]>(`/requests/${requestId}/reserve-batch`, {
+            method: "POST",
+            body: JSON.stringify({
+                allocations: allocations.map((allocation) => ({
+                    spool_id: allocation.spoolId,
+                    amount: allocation.amount,
+                })),
+                user_id: "system",
+            }),
+        }),
+    updateRequestStatus: (requestId: number, status: string) =>
+        request<PrintRequest>(`/requests/${requestId}/status`, {
+            method: "PATCH",
+            body: JSON.stringify({ status }),
+        }),
+    completeRequest: (requestId: number) =>
+        request<PrintRequest>(`/requests/${requestId}/complete`, {
+            method: "POST",
         }),
 };

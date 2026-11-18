@@ -88,7 +88,11 @@ def create_machine(
     Raises:
         HTTPException 422: If validation fails
     """
-    machine = Machine(name=machine_data.name, status="offline")
+    machine = Machine(
+        name=machine_data.name,
+        spool_capacity=machine_data.spool_capacity,
+        status="offline",
+    )
     db.add(machine)
     db.commit()
     db.refresh(machine)
@@ -96,8 +100,8 @@ def create_machine(
     return MachineOut(
         id=machine.id,
         name=machine.name,
+        spool_capacity=machine.spool_capacity,
         status=machine.status,
-        current_spool_id=None,  # New machines have no assigned spool
     )
 
 
@@ -121,8 +125,8 @@ def list_machines(db: Session = Depends(get_db)) -> list[MachineOut]:  # noqa: B
             MachineOut(
                 id=machine.id,
                 name=machine.name,
+                spool_capacity=machine.spool_capacity,
                 status=machine.status,
-                current_spool_id=get_current_spool_for_machine(db, machine.id),
             )
         )
 
@@ -152,8 +156,8 @@ def get_machine(
     return MachineOut(
         id=machine.id,
         name=machine.name,
+        spool_capacity=machine.spool_capacity,
         status=machine.status,
-        current_spool_id=get_current_spool_for_machine(db, machine_id),
     )
 
 
@@ -189,8 +193,8 @@ def update_machine_status(
     return MachineOut(
         id=machine.id,
         name=machine.name,
+        spool_capacity=machine.spool_capacity,
         status=machine.status,
-        current_spool_id=get_current_spool_for_machine(db, machine_id),
     )
 
 

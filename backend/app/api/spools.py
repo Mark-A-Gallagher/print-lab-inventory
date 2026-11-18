@@ -78,20 +78,24 @@ def create_spool(
     """
     from app.models import InventoryEvent
 
-    # Validate that the material exists
-    material = db.query(Material).filter(Material.id == spool_data.material_id).first()
-    if not material:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Material with id {spool_data.material_id} not found",
-        )
+    if spool_data.id is not None:
+        existing_spool = db.get(Spool, spool_data.id)
+        if existing_spool is not None:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=f"Spool ID {spool_data.id} is already in use.",
+            )
 
-    # If material_type or color are provided, use the material with that
-    # type/color (creating it if needed). Never edit the existing row:
-    # other spools share it and would silently change type/color.
+    material = None
+    if spool_data.material_id is not None:
+        material = db.get(Material, spool_data.material_id)
+
+    # Material type/color create or reuse a material record. A material ID
+    # is retained for existing print-request and inventory relationships,
+    # but it is never required to be supplied as the spool's own ID.
     if spool_data.material_type or spool_data.color:
-        name = spool_data.material_type or material.name
-        color = spool_data.color or material.color
+        name = spool_data.material_type or "Unspecified"
+        color = spool_data.color
         match = db.query(Material).filter(Material.name == name)
         match = match.filter(
             Material.color.is_(None) if color is None else Material.color == color
@@ -103,8 +107,24 @@ def create_spool(
             db.flush()
         material = found
 
+    if material is None:
+        match = (
+            db.query(Material)
+            .filter(
+                Material.name == "Unspecified",
+                Material.color.is_(None),
+            )
+            .first()
+        )
+        if match is None:
+            match = Material(name="Unspecified", color=None)
+            db.add(match)
+            db.flush()
+        material = match
+
     # Create the Spool row
     spool = Spool(
+        id=spool_data.id,
         material_id=material.id,
         original_weight=spool_data.original_weight,
         empty_spool_weight=spool_data.empty_spool_weight,
@@ -145,9 +165,7 @@ def list_spools(db: Session = Depends(get_db)) -> list[SpoolOut]:  # noqa: B008
 
     response = []
     for spool in spools:
-        response.append(
-            _to_spool_out(db, spool)
-        )
+        response.append(_to_spool_out(db, spool))
 
     return response
 

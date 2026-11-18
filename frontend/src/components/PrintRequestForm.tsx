@@ -1,6 +1,5 @@
 import { type FormEvent, useState } from "react";
 import { api } from "../api/client";
-import type { PrintRequestCreate } from "../types";
 import "./PrintRequestForm.css";
 
 interface PrintRequestFormProps {
@@ -15,10 +14,11 @@ export default function PrintRequestForm({
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [formData, setFormData] = useState({
+        id: 1,
         requested_by: "",
         project_name: "",
-        material_id: 1,
-        amount_grams: 100,  // ← CHANGED from amount_required
+        amount_grams: 100,
+        color_count: 1,
     });
 
     const handleChange = (
@@ -29,7 +29,9 @@ export default function PrintRequestForm({
         setFormData((prev) => ({
             ...prev,
             [name]:
-                name === "material_id" || name === "amount_grams"  // ← CHANGED
+                name === "id" ||
+                    name === "amount_grams" ||
+                    name === "color_count"
                     ? Number(value)
                     : value,
         }));
@@ -42,10 +44,11 @@ export default function PrintRequestForm({
 
         try {
             await api.createPrintRequest({
+                id: formData.id,
                 requested_by: formData.requested_by,
                 project_name: formData.project_name,
-                material_id: formData.material_id,
-                amount_grams: formData.amount_grams,  // ← CHANGED
+                amount_grams: formData.amount_grams,
+                color_count: formData.color_count,
             });
             onSuccess();
         } catch (err) {
@@ -86,20 +89,20 @@ export default function PrintRequestForm({
             </div>
 
             <div className="form-group">
-                <label htmlFor="material_id">Material ID *</label>
+                <label htmlFor="id">Ticket Number *</label>
                 <input
-                    id="material_id"
-                    name="material_id"
+                    id="id"
+                    name="id"
                     type="number"
                     min="1"
-                    value={formData.material_id}
+                    value={formData.id}
                     onChange={handleChange}
                     required
                 />
             </div>
 
             <div className="form-group">
-                <label htmlFor="amount_grams">Amount Required (g) *</label>
+                <label htmlFor="amount_grams">Total Filament (g) *</label>
                 <input
                     id="amount_grams"
                     name="amount_grams"
@@ -107,6 +110,19 @@ export default function PrintRequestForm({
                     min="1"
                     step="0.1"
                     value={formData.amount_grams}
+                    onChange={handleChange}
+                    required
+                />
+            </div>
+
+            <div className="form-group">
+                <label htmlFor="color_count">Color Count *</label>
+                <input
+                    id="color_count"
+                    name="color_count"
+                    type="number"
+                    min="1"
+                    value={formData.color_count}
                     onChange={handleChange}
                     required
                 />

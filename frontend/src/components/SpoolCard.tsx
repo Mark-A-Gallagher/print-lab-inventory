@@ -22,7 +22,7 @@ export default function SpoolCard({
     return (
         <div className="spool-card" onClick={handleClick}>
             <div className="spool-header">
-                <h3>{typeLabel ?? `Spool #${spool.id}`}</h3>
+                <h3>{typeLabel ? `${typeLabel} · Spool #${spool.id}` : `Spool #${spool.id}`}</h3>
                 {color && (
                     <span className="material-color">
                         <span

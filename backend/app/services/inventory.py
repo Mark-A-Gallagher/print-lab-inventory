@@ -10,7 +10,7 @@
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-from app.models import InventoryEvent, InventoryEventType, Spool
+from app.models import InventoryEvent, InventoryEventType, Machine, Spool
 
 
 def get_current_weight(db: Session, spool_id: int) -> float:
@@ -231,6 +231,21 @@ def assign_to_machine(
     if current_machine is not None:
         raise ValueError(
             f"Spool {spool_id} is already assigned to machine {current_machine}."
+        )
+
+    machine = db.get(Machine, machine_id)
+    if machine is None:
+        raise ValueError(f"Machine {machine_id} does not exist.")
+
+    assigned_count = sum(
+        1
+        for spool in db.query(Spool).all()
+        if get_current_machine(db, spool.id) == machine_id
+    )
+
+    if assigned_count >= machine.spool_capacity:
+        raise ValueError(
+            f"Machine {machine.name} is full ({machine.spool_capacity} spool slots)."
         )
 
     new_event = InventoryEvent(

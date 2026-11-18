@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { api } from "../api/client";
 import LowStockBadge from "../components/LowStockBadge";
-import type { Spool, Machine, Material, InventoryEvent } from "../types";
+import type { Spool, Machine, InventoryEvent } from "../types";
 import "./SpoolDetail.css";
 
 export default function SpoolDetail() {
@@ -13,7 +13,6 @@ export default function SpoolDetail() {
     const spoolId = id ? Number(id) : null;
 
     const [spool, setSpool] = useState<Spool | null>(null);
-    const [material, setMaterial] = useState<Material | null>(null);
     const [machines, setMachines] = useState<Machine[]>([]);
     const [history, setHistory] = useState<InventoryEvent[]>([]);
     const [loading, setLoading] = useState(true);

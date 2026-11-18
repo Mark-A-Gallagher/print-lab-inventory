@@ -100,29 +100,42 @@ export default function Machines() {
                                     </div>
 
                                     <div className="machine-info">
-                                        {assignedSpools.length > 0 ? (
-                                            assignedSpools.map((spool) => (
-                                                <div key={spool.id} className="assigned-spool">
-                                                    <p className="assigned-label">Currently Printing:</p>
-                                                    <p className="spool-info">
-                                                        {spool.material_type ?? "Spool"}
-                                                        {spool.color ? ` · ${spool.color}` : ""}
-                                                        {` (#${spool.id})`}
-                                                    </p>
-                                                    <p className="weight-info">
-                                                        {spool.current_weight.toFixed(1)}g available
-                                                    </p>
-                                                    <button
-                                                        className="btn-remove-spool"
-                                                        onClick={() => handleRemoveSpool(spool.id)}
-                                                        disabled={busy}
-                                                    >
-                                                        Remove filament
-                                                    </button>
-                                                </div>
-                                            ))
-                                        ) : (
-                                            <p className="no-spool">No filament assigned</p>
+                                        <p className="assigned-label">
+                                            Spool Slots: {assignedSpools.length} / {machine.spool_capacity}
+                                        </p>
+
+                                        {Array.from(
+                                            { length: machine.spool_capacity },
+                                            (_, index) => {
+                                                const spool = assignedSpools[index];
+
+                                                return (
+                                                    <div key={index} className="spool-slot">
+                                                        <strong>Slot {index + 1}</strong>
+                                                        {spool ? (
+                                                            <div className="assigned-spool">
+                                                                <p className="spool-info">
+                                                                    {spool.material_type ?? "Spool"}
+                                                                    {spool.color ? ` · ${spool.color}` : ""}
+                                                                    {` (#${spool.id})`}
+                                                                </p>
+                                                                <p className="weight-info">
+                                                                    {spool.current_weight.toFixed(1)}g available
+                                                                </p>
+                                                                <button
+                                                                    className="btn-remove-spool"
+                                                                    onClick={() => handleRemoveSpool(spool.id)}
+                                                                    disabled={busy}
+                                                                >
+                                                                    Remove filament
+                                                                </button>
+                                                            </div>
+                                                        ) : (
+                                                            <p className="empty-slot">Empty</p>
+                                                        )}
+                                                    </div>
+                                                );
+                                            }
                                         )}
                                     </div>
 

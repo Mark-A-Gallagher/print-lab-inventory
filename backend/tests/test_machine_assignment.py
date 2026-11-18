@@ -145,3 +145,47 @@ def test_removing_spool_allows_reassignment(db_session):
     # --- Assert ---
     # Check that the spool is now assigned to the second printer.
     assert get_current_machine(db_session, spool.id) == printer2.id
+
+
+def test_machine_rejects_assignment_when_full(db_session):
+    """
+    Test that a machine rejects assignment of a spool when it is already at full capacity.
+
+    This test follows the standard "Arrange / Act / Assert" pattern:
+        - Arrange: set up the data the test needs (a machine with a full spool capacity and two spools).
+        - Act: assign the first spool to the machine, then attempt to assign the second spool and expect an exception.
+        - Assert: check that the exception is raised and the machine does not accept the second spool.
+    """
+
+    # --- Arrange ---
+    # Create a material and two spools.
+    material = Material(name="Green PLA")
+    db_session.add(material)
+    db_session.commit()
+
+    spools = [
+        Spool(
+            material_id=material.id,
+            original_weight=1000,
+            empty_spool_weight=100,
+            low_stock_threshold=200,
+        )
+        for _ in range(2)
+    ]
+    db_session.add_all(spools)
+    db_session.commit()
+
+    # Create a printer (machine) with a spool capacity of 1.
+    printer = Machine(name="Printer #2", spool_capacity=1)
+    db_session.add(printer)
+    db_session.commit()
+
+    # --- Act ---
+    # Assign the first spool to the printer.
+    user_id = "test-user"
+    assign_to_machine(db_session, spools[0].id, printer.id, user_id)
+
+    # --- Assert ---
+    # Attempt to assign the second spool to the same printer and expect a "full" error.
+    with pytest.raises(ValueError, match="full"):
+        assign_to_machine(db_session, spools[1].id, printer.id, user_id)

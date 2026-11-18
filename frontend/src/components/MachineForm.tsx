@@ -9,6 +9,7 @@ interface MachineFormProps {
 
 export default function MachineForm({ onSuccess, onCancel }: MachineFormProps) {
     const [name, setName] = useState("");
+    const [spoolCapacity, setSpoolCapacity] = useState(1);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -18,7 +19,10 @@ export default function MachineForm({ onSuccess, onCancel }: MachineFormProps) {
         setLoading(true);
 
         try {
-            await api.createMachine({ name });
+            await api.createMachine({
+                name,
+                spool_capacity: spoolCapacity,
+            });
             onSuccess();
         } catch (err) {
             setError(err instanceof Error ? err.message : "Failed to create machine");
@@ -37,6 +41,22 @@ export default function MachineForm({ onSuccess, onCancel }: MachineFormProps) {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="e.g. Printer 1"
+                    required
+                />
+            </div>
+
+            <div className="form-group">
+                <label htmlFor="spool-capacity">Number of Spool Slots *</label>
+                <input
+                    id="spool-capacity"
+                    type="number"
+                    min={1}
+                    max={100}
+                    value={spoolCapacity}
+                    onChange={(e) => {
+                        const value = Number(e.target.value);
+                        setSpoolCapacity(Number.isFinite(value) ? value : 1);
+                    }}
                     required
                 />
             </div>

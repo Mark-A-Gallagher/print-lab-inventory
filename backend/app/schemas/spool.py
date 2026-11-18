@@ -6,7 +6,8 @@ from pydantic import BaseModel, Field
 
 
 class SpoolCreate(BaseModel):
-    material_id: int
+    id: int | None = Field(default=None, gt=0)
+    material_id: int | None = None
     material_type: str | None = Field(default=None, max_length=50)
     color: str | None = Field(default=None, max_length=50)
     original_weight: int = Field(gt=0)

@@ -61,3 +61,6 @@ class PrintRequest(Base):
     status: Mapped[PrintRequestStatus] = mapped_column(
         SQLEnum(PrintRequestStatus), nullable=False, default=PrintRequestStatus.PENDING
     )
+
+    # Number of different filament colors/spools allocated to this project.
+    color_count: Mapped[int] = mapped_column(Integer, nullable=False, default=1)

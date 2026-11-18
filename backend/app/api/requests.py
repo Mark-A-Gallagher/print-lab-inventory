@@ -13,10 +13,19 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models import PrintRequest, Spool
-from app.schemas.request import PrintRequestCreate, PrintRequestOut, ReservationCreate
+from app.schemas.request import (
+    PrintRequestCreate,
+    PrintRequestOut,
+    PrintRequestStatusUpdate,
+    ReservationBatchCreate,
+    ReservationCreate,
+)
 from app.services.reservations import (
+    complete_print_request,
     create_reservation,
+    create_reservation_batch,
     fulfill_reservation,
+    get_active_reservations_for_request,
     release_reservation,
 )
 
@@ -47,24 +56,41 @@ def create_request(
         HTTPException 404: If the material_id does not exist
         HTTPException 422: If validation fails
     """
-    # Validate that the material exists
     from app.models import Material
 
-    material = (
-        db.query(Material).filter(Material.id == request_data.material_id).first()
-    )
-    if not material:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Material with id {request_data.material_id} not found",
-        )
+    if request_data.id is not None:
+        existing = db.get(PrintRequest, request_data.id)
+        if existing is not None:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=f"Ticket number {request_data.id} is already in use.",
+            )
 
-    # Create the print request in Pending status
+    material = None
+    if request_data.material_id is not None:
+        material = db.get(Material, request_data.material_id)
+
+    if material is None:
+        material = (
+            db.query(Material)
+            .filter(
+                Material.name == "Unspecified",
+                Material.color.is_(None),
+            )
+            .first()
+        )
+        if material is None:
+            material = Material(name="Unspecified", color=None)
+            db.add(material)
+            db.flush()
+
     print_request = PrintRequest(
+        id=request_data.id,
         requested_by=request_data.requested_by,
         project_name=request_data.project_name,
-        material_id=request_data.material_id,
+        material_id=material.id,
         amount_grams=request_data.amount_grams,
+        color_count=request_data.color_count,
         status="Pending",
     )
     db.add(print_request)
@@ -77,6 +103,7 @@ def create_request(
         project_name=print_request.project_name,
         material_id=print_request.material_id,
         amount_grams=print_request.amount_grams,
+        color_count=print_request.color_count,
         status=print_request.status,
     )
 
@@ -98,6 +125,7 @@ def list_requests(db: Session = Depends(get_db)) -> list[PrintRequestOut]:  # no
             project_name=r.project_name,
             material_id=r.material_id,
             amount_grams=r.amount_grams,
+            color_count=r.color_count,
             status=r.status,
         )
         for r in requests
@@ -135,6 +163,7 @@ def get_request(
         project_name=print_request.project_name,
         material_id=print_request.material_id,
         amount_grams=print_request.amount_grams,
+        color_count=print_request.color_count,
         status=print_request.status,
     )
 
@@ -180,9 +209,7 @@ def reserve(
         )
 
     # Validate that the spool exists
-    spool = (
-        db.query(Spool).filter(Spool.id == reservation_data.spool_id).first()
-    )
+    spool = db.query(Spool).filter(Spool.id == reservation_data.spool_id).first()
     if not spool:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -300,3 +327,118 @@ def fulfill(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=str(e),
         )
+
+
+@router.get("/{request_id}/reservations")
+def get_request_reservations(
+    request_id: int,
+    db: Session = Depends(get_db),
+) -> list[dict]:
+    print_request = db.get(PrintRequest, request_id)
+    if not print_request:
+        raise HTTPException(status_code=404, detail="Print request not found")
+
+    return [
+        {
+            "id": reservation.id,
+            "spool_id": reservation.spool_id,
+            "print_request_id": reservation.print_request_id,
+            "amount": reservation.amount,
+            "created_at": reservation.created_at.isoformat(),
+        }
+        for reservation in get_active_reservations_for_request(db, request_id)
+    ]
+
+
+@router.patch("/{request_id}/status", response_model=PrintRequestOut)
+def update_request_status(
+    request_id: int,
+    status_data: PrintRequestStatusUpdate,
+    db: Session = Depends(get_db),
+) -> PrintRequestOut:
+    print_request = db.get(PrintRequest, request_id)
+    if not print_request:
+        raise HTTPException(status_code=404, detail="Print request not found")
+
+    if status_data.status.value in (
+        "Approved",
+        "Printing",
+    ) and not get_active_reservations_for_request(db, request_id):
+        raise HTTPException(
+            status_code=422,
+            detail="A ticket must have reservations before it can move to Active.",
+        )
+
+    print_request.status = status_data.status
+    db.commit()
+    db.refresh(print_request)
+
+    return PrintRequestOut(
+        id=print_request.id,
+        requested_by=print_request.requested_by,
+        project_name=print_request.project_name,
+        material_id=print_request.material_id,
+        amount_grams=print_request.amount_grams,
+        color_count=print_request.color_count,
+        status=print_request.status,
+    )
+
+
+@router.post("/{request_id}/reserve-batch", status_code=status.HTTP_201_CREATED)
+def reserve_batch(
+    request_id: int,
+    batch_data: ReservationBatchCreate,
+    db: Session = Depends(get_db),
+) -> list[dict]:
+    print_request = db.get(PrintRequest, request_id)
+    if not print_request:
+        raise HTTPException(status_code=404, detail="Print request not found")
+
+    try:
+        allocations = [
+            (allocation.spool_id, allocation.amount)
+            for allocation in batch_data.allocations
+        ]
+        reservations = create_reservation_batch(
+            db=db,
+            print_request_id=request_id,
+            allocations=allocations,
+            user_id=batch_data.user_id,
+        )
+        return [
+            {
+                "id": reservation.id,
+                "spool_id": reservation.spool_id,
+                "print_request_id": reservation.print_request_id,
+                "amount": reservation.amount,
+            }
+            for reservation in reservations
+        ]
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+
+
+@router.post("/{request_id}/complete", response_model=PrintRequestOut)
+def complete_request(
+    request_id: int,
+    db: Session = Depends(get_db),
+) -> PrintRequestOut:
+    print_request = db.get(PrintRequest, request_id)
+    if not print_request:
+        raise HTTPException(status_code=404, detail="Print request not found")
+
+    try:
+        complete_print_request(db, request_id, "system")
+        db.refresh(print_request)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+
+    return PrintRequestOut(
+        id=print_request.id,
+        requested_by=print_request.requested_by,
+        project_name=print_request.project_name,
+        material_id=print_request.material_id,
+        amount_grams=print_request.amount_grams,
+        color_count=print_request.color_count,
+        status=print_request.status,
+    )

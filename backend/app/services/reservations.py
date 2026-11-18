@@ -9,6 +9,8 @@ from sqlalchemy.orm import Session
 from app.models import (
     InventoryEvent,
     InventoryEventType,
+    PrintRequest,
+    PrintRequestStatus,
     ReservationEvent,
     ReservationEventType,
 )
@@ -115,6 +117,22 @@ def create_reservation(
 
     if amount > available:
         raise ValueError(f"Cannot reserve {amount}g - only {available}g available.")
+
+    print_request = db.get(PrintRequest, print_request_id)
+    if print_request is None:
+        raise ValueError(f"Print request {print_request_id} does not exist.")
+
+    if get_active_reservations_for_request(db, print_request_id):
+        raise ValueError(f"Ticket {print_request_id} has already been reserved.")
+
+    already_reserved = get_reserved_for_request(db, print_request_id)
+    if already_reserved + amount > print_request.amount_grams:
+        remaining = max(0.0, print_request.amount_grams - already_reserved)
+        raise ValueError(
+            f"Reservation total for ticket {print_request_id} would exceed "
+            f"the total of {print_request.amount_grams}g. "
+            f"Only {remaining:g}g remains to reserve."
+        )
 
     new_reservation = ReservationEvent(
         spool_id=spool_id,
@@ -240,6 +258,181 @@ def fulfill_reservation(db: Session, reservation_id: int, user_id: str) -> None:
         )
         db.add(fulfilled_event)
 
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
+
+
+def get_reserved_for_request(db: Session, print_request_id: int) -> float:
+    """Return the active reservation total for one print request."""
+    created_ids = {
+        row[0]
+        for row in db.query(ReservationEvent.id)
+        .filter(
+            ReservationEvent.print_request_id == print_request_id,
+            ReservationEvent.event_type == ReservationEventType.RESERVATION_CREATED,
+        )
+        .all()
+    }
+
+    if not created_ids:
+        return 0.0
+
+    created = sum(
+        float(row.amount)
+        for row in db.query(ReservationEvent)
+        .filter(
+            ReservationEvent.id.in_(created_ids),
+        )
+        .all()
+    )
+
+    resolved = sum(
+        float(row.amount)
+        for row in db.query(ReservationEvent)
+        .filter(
+            ReservationEvent.print_request_id == print_request_id,
+            ReservationEvent.event_type.in_(
+                [
+                    ReservationEventType.RESERVATION_RELEASED,
+                    ReservationEventType.RESERVATION_FULFILLED,
+                ]
+            ),
+        )
+        .all()
+    )
+    return created - resolved
+
+
+def get_active_reservations_for_request(
+    db: Session, print_request_id: int
+) -> list[ReservationEvent]:
+    """Return active reservation-created events for a print request."""
+    created = (
+        db.query(ReservationEvent)
+        .filter(
+            ReservationEvent.print_request_id == print_request_id,
+            ReservationEvent.event_type == ReservationEventType.RESERVATION_CREATED,
+        )
+        .all()
+    )
+
+    return [
+        reservation
+        for reservation in created
+        if _get_reservation_status(db, reservation.id) == "active"
+    ]
+
+
+def create_reservation_batch(
+    db: Session,
+    print_request_id: int,
+    allocations: list[tuple[int, float]],
+    user_id: str,
+) -> list[ReservationEvent]:
+    """Create all color allocations for a ticket as one locked reservation batch."""
+    print_request = db.get(PrintRequest, print_request_id)
+    if print_request is None:
+        raise ValueError(f"Print request {print_request_id} does not exist.")
+
+    if get_active_reservations_for_request(db, print_request_id):
+        raise ValueError(f"Ticket {print_request_id} has already been reserved.")
+
+    if not allocations:
+        raise ValueError("At least one spool allocation is required.")
+
+    combined = sum(amount for _, amount in allocations)
+    if combined > print_request.amount_grams:
+        raise ValueError(
+            f"Reservation total {combined:g}g exceeds ticket total "
+            f"of {print_request.amount_grams}g."
+        )
+
+    totals_by_spool: dict[int, float] = {}
+    for spool_id, amount in allocations:
+        if amount <= 0:
+            raise ValueError("Reservation amounts must be greater than zero.")
+        totals_by_spool[spool_id] = totals_by_spool.get(spool_id, 0.0) + amount
+
+    for spool_id, amount in totals_by_spool.items():
+        available = get_available(db, spool_id)
+        if amount > available:
+            raise ValueError(
+                f"Cannot reserve {amount:g}g from spool {spool_id}; "
+                f"only {available:g}g is available."
+            )
+
+    events = [
+        ReservationEvent(
+            spool_id=spool_id,
+            print_request_id=print_request_id,
+            event_type=ReservationEventType.RESERVATION_CREATED,
+            amount=amount,
+            user_id=user_id,
+        )
+        for spool_id, amount in allocations
+    ]
+    db.add_all(events)
+    db.commit()
+    for event in events:
+        db.refresh(event)
+    return events
+
+
+def complete_print_request(
+    db: Session,
+    print_request_id: int,
+    user_id: str,
+) -> None:
+    """Complete a printing ticket and fulfill all active spool reservations atomically."""
+    print_request = db.get(PrintRequest, print_request_id)
+    if print_request is None:
+        raise ValueError(f"Print request {print_request_id} does not exist.")
+
+    if print_request.status not in (
+        PrintRequestStatus.APPROVED,
+        PrintRequestStatus.PRINTING,
+    ):
+        raise ValueError(
+            f"Ticket {print_request_id} must be active before it can be completed."
+        )
+
+    active = get_active_reservations_for_request(db, print_request_id)
+    if not active:
+        raise ValueError(f"Ticket {print_request_id} has no active reservations.")
+
+    try:
+        for reservation in active:
+            current_weight = get_current_weight(db, reservation.spool_id)
+            if current_weight < reservation.amount:
+                raise ValueError(
+                    f"Insufficient filament remains in spool {reservation.spool_id}."
+                )
+
+            db.add(
+                InventoryEvent(
+                    spool_id=reservation.spool_id,
+                    event_type=InventoryEventType.FILAMENT_USED,
+                    quantity_change=-reservation.amount,
+                    machine_id=None,
+                    user_id=user_id,
+                    related_request_id=print_request_id,
+                    note=f"Completion of ticket #{print_request_id}",
+                )
+            )
+            db.add(
+                ReservationEvent(
+                    spool_id=reservation.spool_id,
+                    print_request_id=print_request_id,
+                    event_type=ReservationEventType.RESERVATION_FULFILLED,
+                    amount=reservation.amount,
+                    user_id=user_id,
+                    related_event_id=reservation.id,
+                )
+            )
+
+        print_request.status = PrintRequestStatus.COMPLETE
         db.commit()
     except Exception:
         db.rollback()

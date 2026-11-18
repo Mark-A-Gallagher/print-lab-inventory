@@ -9,6 +9,7 @@ export type Material = {
 export type Machine = {
     id: number;
     name: string;
+    spool_capacity: number;
     status: string;
 };
 
@@ -36,11 +37,13 @@ export type PrintRequest = {
     project_name: string;
     material_id: number;
     amount_grams: number;
+    color_count: number;
     status: "Pending" | "Approved" | "Printing" | "Complete" | "Rejected";
 };
 
 export type SpoolCreate = {
-    material_id: number;
+    id: number;
+    material_id?: number;
     material_type?: string | null;
     color?: string | null;
     original_weight: number;
@@ -50,14 +53,16 @@ export type SpoolCreate = {
 
 export type MachineCreate = {
     name: string;
+    spool_capacity: number;
     status?: string;
 };
 
 export type PrintRequestCreate = {
+    id: number;
     requested_by: string;
     project_name: string;
-    material_id: number;
     amount_grams: number;
+    color_count: number;
 };
 
 export type ReservationCreate = {

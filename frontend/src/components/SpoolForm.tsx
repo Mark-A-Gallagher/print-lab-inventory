@@ -1,6 +1,5 @@
 import { type FormEvent, useState } from "react";
 import { api } from "../api/client";
-import type { SpoolCreate } from "../types";
 import "./SpoolForm.css";
 
 interface SpoolFormProps {
@@ -12,7 +11,7 @@ export default function SpoolForm({ onSuccess, onCancel }: SpoolFormProps) {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [formData, setFormData] = useState({
-        material_id: 1,
+        id: 1,
         material_type: "",
         color: "",
         original_weight: 1000,
@@ -28,7 +27,7 @@ export default function SpoolForm({ onSuccess, onCancel }: SpoolFormProps) {
         setFormData((prev) => ({
             ...prev,
             [name]:
-                name === "material_id" ||
+                name === "id" ||
                     name === "original_weight" ||
                     name === "empty_spool_weight" ||
                     name === "low_stock_threshold"
@@ -44,7 +43,7 @@ export default function SpoolForm({ onSuccess, onCancel }: SpoolFormProps) {
 
         try {
             await api.createSpool({
-                material_id: formData.material_id,
+                id: formData.id,
                 material_type: formData.material_type || null,
                 color: formData.color || null,
                 original_weight: formData.original_weight,
@@ -62,13 +61,13 @@ export default function SpoolForm({ onSuccess, onCancel }: SpoolFormProps) {
     return (
         <form className="spool-form" onSubmit={handleSubmit}>
             <div className="form-group">
-                <label htmlFor="material_id">Material ID *</label>
+                <label htmlFor="spool-id">Spool ID *</label>
                 <input
-                    id="material_id"
-                    name="material_id"
+                    id="spool-id"
+                    name="id"
                     type="number"
                     min="1"
-                    value={formData.material_id}
+                    value={formData.id}
                     onChange={handleChange}
                     required
                 />

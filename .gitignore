@@ -10,6 +10,9 @@ venv/
 # Node / frontend
 node_modules/
 dist/
+*.tsbuildinfo
+frontend/src/**/*.js
+frontend/src/**/*.js.map
 .vite/
 
 # Env / secrets
